@@ -1,0 +1,19 @@
+{
+  "_说明": "每个产品一条。长宽高单位 cm，重量单位 kg。值为 null 的字段必须填，否则程序会报错而不是默默算错。以 _ 开头的键会被忽略。",
+  "US2000": {
+    "aliases": [],
+    "packaging_code": null,
+    "carton_length_cm": null,
+    "carton_width_cm": null,
+    "carton_height_cm": null,
+    "carton_weight_kg": null,
+    "pallet_length_cm": 120,
+    "pallet_width_cm": 80,
+    "pallet_height_cm": null,
+    "pallet_weight_kg": null,
+    "per_layer": 4,
+    "max_layers": 11,
+    "full_pallet_height_cm": null,
+    "full_pallet_weight_kg": null
+  }
+}
