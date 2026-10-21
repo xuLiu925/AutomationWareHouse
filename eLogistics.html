@@ -1,0 +1,4852 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://elogistics.dachser.com/frqs/index?1 -->
+<html xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd http://wicket.apache.org" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script type="text/javascript" src="./eLogistics_files/jquery-3.6.0-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/jquery-ui-datepicker-1.12.0-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/jquery-ui-datepicker-custom-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/disableComponent-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/wicket-ajax-jquery-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" id="wicket-ajax-base-url">
+/*<![CDATA[*/
+Wicket.Ajax.baseUrl="index?1&amp;sesid=9cfd9497d880de3062489025c43e69627b25a9a0a04c978ffd&amp;javalocale=en_US";
+/*]]>*/
+</script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/combobox-ver-1785324664000.css">
+<script type="text/javascript" src="./eLogistics_files/jquery.fineSelect-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/jquery.fineSelect.search-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/menu-ver-1785324664000.js.下载"></script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/combobox-ver-1785324664000(1).css">
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/jquery-ui-ver-1785324664000.css">
+<script type="text/javascript" src="./eLogistics_files/jquery-ui-ver-1785324664000.js.下载"></script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/addressmatchcode-ver-1785324664000.css">
+<script type="text/javascript" src="./eLogistics_files/jquery.searchbox-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/addressmatchcode-ver-1785324664000.js.下载"></script>
+
+    <script type="text/javascript" id="com-dachser-uiFreightQuotation-addresses-PnlAddressEdit-0">
+/*<![CDATA[*/
+
+        $(function() {
+            $(document).on('keypress', 'input.idSearch', function(e) {
+                if (e.keyCode == 13) {
+                    e.preventDefault();
+                    $(this).trigger("blur").siblings('.idSearchLink').trigger('click');
+                    $(this).trigger('focus');
+                    return false;
+                }
+            });
+        });
+    
+/*]]>*/
+</script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/datepicker-ver-1785324664000.css">
+<script type="text/javascript" src="./eLogistics_files/jquery-ui-i18n.min-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/AppendableListView-ver-1785324664000.js.下载"></script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/fwTabsDetail-ver-1785324664000.css">
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/freeTextSelect-ver-1785324664000.css">
+<script type="text/javascript" src="./eLogistics_files/jquery.freeTextSelect-ver-1785324664000.js.下载"></script>
+<script type="text/javascript" src="./eLogistics_files/jquery.scrollTo-2.1.3.min-ver-1785324664000.js.下载"></script>
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/orderlines-ver-1785324664000.css">
+ 	
+<!--[if lt IE 9]> 
+	<script type="text/javascript" src="./wicket/resource/com.dachser.uiservicemenu.BasePage/resources/js/semanticElementsIE-ver-1785324664000.js"></script>
+<![endif]-->
+<title>eLogistics</title>
+
+		<script type="text/javascript" id="com-dachser-uiFreightQuotation-IndexPage-0">
+/*<![CDATA[*/
+
+			//CATCH BROWSER BACK
+			try {
+				history.forward();
+			} catch (e) {
+				// OK to ignore
+			}
+		
+/*]]>*/
+</script>
+
+	<link rel="stylesheet" type="text/css" href="./eLogistics_files/styles_service-ver-1785324664000.css">
+<link rel="shortcut icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/favicon-ver-1785324664000.ico">
+<link rel="icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/favicon-16x16-ver-1785324664000.png" sizes="16x16" type="">
+<link rel="icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/favicon-32x32-ver-1785324664000.png" sizes="32x32" type="">
+<link rel="icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/android-chrome-192x192-ver-1785324664000.png" sizes="192x192" type="">
+<link rel="icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/android-chrome-512x512-ver-1785324664000.png" sizes="512x512" type="">
+<link rel="apple-touch-icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/apple-touch-icon-ver-1785324664000.png" sizes="180x180">
+<meta name="msapplication-TileImage" content="./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/mstitle-150x150.png">
+<meta name="msapplication-TileColor" content="#ffffff">
+<link rel="mask-icon" href="https://elogistics.dachser.com/frqs/wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/favicon/safari-pinned-tab-ver-1785324664000.svg" sizes="any">
+<link rel="stylesheet" type="text/css" href="./eLogistics_files/styles-ver-1785324668000.css">
+<script type="text/javascript" src="./eLogistics_files/scripts-ver-1785324668000.js.下载"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+Wicket.Event.add(window, "domready", function(event) { 
+Wicket.Ajax.ajax({"u":"./index?1-1.0-header-navigation-blog","c":"idae","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.1-header-navigation-blog","c":"idae","bh":[function(attrs){disableLinkByReplace('idae');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idae');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idae');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-header-elogistics-elogisticsLogo","c":"idaf","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-header-dachserLogo","c":"idb0","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-header-language","m":"POST","c":"ida0","bh":[function(attrs){$(document).keydown(function(e) {if (e.keyCode == 27) { $('#idb1').hide(); e.preventDefault(); return false; }});}],"pre":[function(attrs){$('#idb1').show();}],"e":"change"});;
+jQuery('#ida0').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.svg?-blue-simpleBlack", "searchEnabled": true, "themeClassName": "blueTheme_simpleBlack" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-0-category-hide","c":"idb2","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-0-category-content-0-application-link","c":"idb3","bh":[function(attrs){disableLinkByReplace('idb3');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb3');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb3');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-0-category-content-1-application-link","c":"idb4","bh":[function(attrs){disableLinkByReplace('idb4');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb4');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb4');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-0-category-content-2-application-link","c":"idb5","bh":[function(attrs){disableLinkByReplace('idb5');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb5');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb5');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-0-category-content-3-application-link","c":"idb6","bh":[function(attrs){disableLinkByReplace('idb6');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb6');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb6');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-1-category-content-0-application-link","c":"idb7","bh":[function(attrs){disableLinkByReplace('idb7');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb7');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb7');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-1-category-content-1-application-link","c":"idb8","bh":[function(attrs){disableLinkByReplace('idb8');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb8');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb8');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-2-category-content-0-application-link","c":"idb9","bh":[function(attrs){disableLinkByReplace('idb9');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idb9');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idb9');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-menu-block-2-category-content-1-application-link","c":"idba","bh":[function(attrs){disableLinkByReplace('idba');},function(attrs){saveMenuOffsetToWebStorage();}],"fh":[function(attrs, jqXHR, errorMessage, textStatus){enableLinkByReplace('idba');}],"coh":[function(attrs, jqXHR, textStatus){enableLinkByReplace('idba');}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-show","c":"idbb","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-helpLink","c":"idbc","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-tabs~container-tabs-0-link","c":"idbd","e":"click","pd":true});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-tabs~container-tabs-1-link","c":"idbe","e":"click","pd":true});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-tabs~container-tabs-2-link","c":"idbf","e":"click","pd":true});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-btnLoad","m":"POST","c":"idc1","f":"idc0","sc":"btnLoad","e":"click","pd":true});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignor-ctnAddress-lnkShowHide","c":"idc2","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-ctnZipCity-zip","m":"POST","c":"idc3","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-lnkShowHide","c":"idc4","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-countries","m":"POST","c":"selCountries","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.1-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-countries","c":"selCountries","e":"keyup"});;
+jQuery('#selCountries').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "favoriteBox": true, "favoriteMax": 5, "searchEnabled": true, "themeClassName": "greyTheme" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-search-id","m":"POST","c":"idc5","e":"focusout"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-search-name1","m":"POST","c":"idc6","e":"focusout"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-search-zip","m":"POST","c":"idc7","e":"focusout"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-search-location","m":"POST","c":"idc8","e":"focusout"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-pnlAddressConsignee-ctnAddress-search-search","c":"idc9","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAddress-pnlAddresses-lnkChangeView","c":"idca","e":"click"});;
+if ($.datepicker.regional['en-US'] != undefined) {$.datepicker.setDefaults($.datepicker.regional['en-US'])} else if ($.datepicker.regional['en'] != undefined) {$.datepicker.setDefaults($.datepicker.regional['en'])} else if ($.datepicker.regional.en != undefined) {$.datepicker.setDefaults($.datepicker.regional.en)}else {$.datepicker.setDefaults($.datepicker.regional['en_US'])};
+jQuery('#ida4').destroyDatepicker();
+jQuery('#ida4').datepicker({ "buttonImage": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/datepicker-ver-1785324664000.png", "buttonText": "Date", "changeMonth": "true", "minDate": new Date(2026,9,21), "dateFormat": "mm/dd/yy", "beforeShowDay": $.datepicker.noWeekends, "showOn": "both", "maxDate": new Date(2029,9,21), "beforeShow": setDatepickerThemeClassToCalendar, "numberOfMonths": 2, "showOtherMonths": "true", "buttonImageOnly": "true" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnOrderData-selDivision","m":"POST","c":"selDivision","e":"change"});;
+jQuery('#selDivision').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "searchEnabled": true, "themeClassName": "greyTheme" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnOrderData-selProducts","m":"POST","c":"selProduct","e":"change"});;
+jQuery('#selProduct').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "searchEnabled": true, "themeClassName": "greyTheme" });;
+jQuery('#selTerms').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "searchEnabled": true, "themeClassName": "greyTheme" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAdditionalServ-specialContainer-ctnDG-cbDG","m":"POST","c":"idcb","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-ctnAdditionalServ-ctnAvis-selAdvice","m":"POST","c":"idcc","sr":true,"pre":[function(attrs){return attrs.event.target.name === 'ctnAdditionalServ:ctnAvis:selAdvice'}],"e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-reference-tabs-lstLinks-0-lnkTab","c":"idcd","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-reference-tabs-lstLinks-1-lnkTab","c":"idce","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-reference-tabs-lstLinks-2-lnkTab","c":"idcf","e":"click"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-reference-tabs-lstPanels-1-ctnPanels-tabpanel-content-list-1-cols-5-reference","m":"POST","c":"idd0","e":"focus"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-reference-tabs-lstPanels-2-ctnPanels-tabpanel-content-list-1-cols-5-reference","m":"POST","c":"idd1","e":"focus"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-1-panel-counter","m":"POST","c":"idd2","e":"inputchange change"});;
+jQuery('#ida7').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "searchEnabled": true, "themeClassName": "greyTheme" });;
+jQuery('#ida9').freeTextSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/freeTextSelect-ver-1785324664000.png?-grey", "themeClassName": "greyTheme" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-3-panel-content-contextSelect-input","m":"POST","c":"idd3","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-3-panel-content-contextSelect-hiddenIdInput","m":"POST","c":"idd4","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-5-panel-container-length","m":"POST","c":"idd5","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-5-panel-container-width","m":"POST","c":"idd6","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-0-nested-5-panel-container-height","m":"POST","c":"idd7","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-1-panel-counter","m":"POST","c":"idd8","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.1-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-1-panel-counter","c":"idd8","e":"focus"});;
+jQuery('#idaa').fineSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/combobox-ver-1785324664000.gif?-grey", "searchEnabled": true, "themeClassName": "greyTheme" });;
+jQuery('#idac').freeTextSelect({ "img": "./wicket/resource/com.dachser.framework.guiwicket.uiformcomponents.theme.ThemeProvider/freeTextSelect-ver-1785324664000.png?-grey", "themeClassName": "greyTheme" });;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-3-panel-content-contextSelect-input","m":"POST","c":"idd9","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-3-panel-content-contextSelect-hiddenIdInput","m":"POST","c":"idda","e":"change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-5-panel-container-length","m":"POST","c":"iddb","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-5-panel-container-width","m":"POST","c":"iddc","e":"inputchange change"});;
+Wicket.Ajax.ajax({"u":"./index?1-1.0-tabs-panel-pnlEnterOrder-loadForm-orderLinePanel-listView-1-nested-5-panel-container-height","m":"POST","c":"iddd","e":"inputchange change"});;
+document.documentElement.setAttribute('lang','en');;
+resetTabIndex();;
+Wicket.Event.publish(Wicket.Event.Topic.AJAX_HANDLERS_BOUND);
+;});
+/*]]>*/
+</script>
+<script type="text/javascript" src="./eLogistics_files/table-ver-1785324664000.js.下载"></script><link rel="stylesheet" type="text/css" href="./eLogistics_files/table-ver-1785324664000.css"><script type="text/javascript" src="./eLogistics_files/modal-ver-1785324664000.js.下载"></script><link rel="stylesheet" type="text/css" href="./eLogistics_files/modal-ver-1785324664000.css"><link rel="stylesheet" type="text/css" href="./eLogistics_files/dialog-ver-1785324664000.css"><link rel="stylesheet" type="text/css" href="./eLogistics_files/history-ver-1785324668000.css"><link rel="stylesheet" type="text/css" href="./eLogistics_files/print-ver-1785324668000.css"></head>
+<body>
+	<servicearea-header-feedback>
+		<servicearea-feedback id="idde">
+  
+</servicearea-feedback>
+		<servicearea-header-background></servicearea-header-background>
+		<servicearea-header-wrapper>
+			<div>
+				<servicearea_header id="iddf">
+			<div id="header-container">
+				<div id="left-side">
+					<div id="left-table-container">
+						<div id="elogistics-logo">
+							<a href="https://elogistics.dachser.com/frqs/index?1-1.-header-elogistics">	
+								<img id="idaf" src="./eLogistics_files/elogistics-logo-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/elogistics-logo-ver-1785324664000.png'; this.onerror=null;">
+							</a>
+						</div>
+						<div class="special-user-parent">
+							
+							
+						</div>
+					</div>
+				</div>
+				<div id="right-side">
+					<div class="table-container">
+						<div id="navigation-container">
+							<div class="table-container">
+								<div id="service-header-nav">	
+			
+			
+				<span class="service-header-nav-couple">
+					<a class="service-header-nav-couple-link" href="https://elogistics.dachser.com/frqs/index?1-1.-header-navigation-home">
+						<img src="./eLogistics_files/home-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/home-ver-1785324664000.png'; this.onerror=null;"> 
+						<span>Home</span>		
+					</a>
+				</span>	
+			
+			
+				<span class="service-header-nav-couple">
+					<a class="service-header-nav-couple-link" href="https://elogistics.dachser.com/frqs/index?1-1.-header-navigation-settings">
+						<img src="./eLogistics_files/settings-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/settings-ver-1785324664000.png'; this.onerror=null;">
+						<span>Settings</span>
+					</a>
+				</span>
+			
+			
+				<span class="service-header-nav-couple">
+					<a class="service-header-nav-couple-link service-header-nav-couple-blog" id="idae" href="javascript:;">
+						<img src="./eLogistics_files/blog-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/blog-ver-1785324664000.png'; this.onerror=null;">
+						<span>Blog</span>
+					</a>
+				</span>
+			
+			
+			
+				<span class="service-header-nav-couple">
+					<a class="service-header-nav-couple-link" href="https://elogistics.dachser.com/frqs/index?1-1.-header-navigation-logout">
+						<img src="./eLogistics_files/onOff-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/onOff-ver-1785324664000.png'; this.onerror=null;">
+						<span>Logout</span>
+					</a>
+				</span>
+			
+			
+		</div>		
+								<div id="service-language">
+									<select name="header:language" id="ida0" tabindex="-1" style="opacity: 0; position: absolute; width: 0px;">
+<option value="009">Česky</option>
+<option value="007">Dansk</option>
+<option value="   ">Deutsch</option>
+<option selected="selected" value="001">English</option>
+<option value="003">Español</option>
+<option value="002">Français</option>
+<option value="005">Italiano</option>
+<option value="008">Magyar</option>
+<option value="006">Nederlands</option>
+<option value="013">Norsk</option>
+<option value="011">Polski</option>
+<option value="004">Português</option>
+<option value="018">Română</option>
+<option value="010">Slovensky</option>
+<option value="021">Suomi</option>
+<option value="012">Svenska</option>
+</select><div class="fineSelect blueTheme_simpleBlack ida0" style="position: relative;"><div><input type="text" class="undefined fineSelect" search_active="true" autocomplete="off" search_favorite="false" wicketpath="undefined_div_input" selected_value="001" selected_text="English"></div><div class="imgWrapper"><img src="./eLogistics_files/combobox-ver-1785324664000.svg"></div><ul class="fineSelect optlist" style="width: 119px; display: none;"><li val="009" wicketpath="undefined_div_li_0">Česky</li><li val="007" wicketpath="undefined_div_li_1">Dansk</li><li val="   " wicketpath="undefined_div_li_2">Deutsch</li><li val="001" wicketpath="undefined_div_li_3">English</li><li val="003" wicketpath="undefined_div_li_4">Español</li><li val="002" wicketpath="undefined_div_li_5">Français</li><li val="005" wicketpath="undefined_div_li_6">Italiano</li><li val="008" wicketpath="undefined_div_li_7">Magyar</li><li val="006" wicketpath="undefined_div_li_8">Nederlands</li><li val="013" wicketpath="undefined_div_li_9">Norsk</li><li val="011" wicketpath="undefined_div_li_10">Polski</li><li val="004" wicketpath="undefined_div_li_11">Português</li><li val="018" wicketpath="undefined_div_li_12">Română</li><li val="010" wicketpath="undefined_div_li_13">Slovensky</li><li val="021" wicketpath="undefined_div_li_14">Suomi</li><li val="012" wicketpath="undefined_div_li_15">Svenska</li></ul></div>
+								</div>						
+							</div>
+						</div>
+						<div id="dachser-logo">
+							<a href="http://www.dachser.com/" target="_blank" rel="noopener">
+								<img id="idb0" src="./eLogistics_files/dachser-logo-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/dachser-logo-ver-1785324664000.png'; this.onerror=null;">
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</servicearea_header>
+			</div>
+		</servicearea-header-wrapper>
+	</servicearea-header-feedback>
+		
+	<servicearea_main> 
+		<servicearea_nav id="border-layer">
+			<div>
+				<div id="menu" style="overflow-y: hidden;">
+						<div class="menu-app-container">
+							<div class="menu-app-group" id="ide1">
+								<h4>
+									<span>Services</span>
+									<a class="hide-application-menu-link" id="idb2" href="javascript:;">
+										<img src="./eLogistics_files/hide-menu-icon-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/hide-menu-icon-ver-1785324664000.png'; this.onerror=null;" style="display: inline;">
+									</a>
+								</h4>
+								<div class="menu-app-section">
+									<div id="ide2">
+										<a class="application-name-link" id="idb3" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">shipment</span><span class="blue-application-name">pointer</span>
+											<span class="black-application-name"></span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div><div class="menu-app-section">
+									<div id="ide3">
+										<a class="application-name-link" id="idb4" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">product</span><span class="blue-application-name">pilot</span>
+											<span class="black-application-name"></span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div><div class="menu-app-section">
+									<div id="ide4">
+										<a class="application-name-link active-application" id="idb5" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">freight</span><span class="blue-application-name">quotation</span>
+											<span class="black-application-name"></span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div><div class="menu-app-section">
+									<div id="ide5">
+										<a class="application-name-link" id="idb6" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">download</span><span class="blue-application-name">center</span>
+											<span class="black-application-name"></span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div>
+							</div>		
+						</div><div class="menu-app-container">
+							<div class="menu-app-group" id="ide6">
+								<h4>
+									<span>Outbound</span>
+									<a class="hide-application-menu-link" id="ide7">
+										
+									</a>
+								</h4>
+								<div class="menu-app-section">
+									<div id="ide8">
+										<a class="application-name-link" id="idb7" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">transport</span><span class="blue-application-name">order</span>
+											<span class="black-application-name">send</span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div><div class="menu-app-section">
+									<div id="ide9">
+										<a class="application-name-link" id="idb8" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">shipment</span><span class="blue-application-name">control</span>
+											<span class="black-application-name">send</span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div>
+							</div>		
+						</div><div class="menu-app-container">
+							<div class="menu-app-group" id="idea">
+								<h4>
+									<span>Inbound</span>
+									<a class="hide-application-menu-link" id="ideb">
+										
+									</a>
+								</h4>
+								<div class="menu-app-section">
+									<div id="idec">
+										<a class="application-name-link" id="idb9" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">transport</span><span class="blue-application-name">order</span>
+											<span class="black-application-name">collect</span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div><div class="menu-app-section">
+									<div id="ided">
+										<a class="application-name-link" id="idba" href="javascript:;">
+										
+											<!-- Don't change the HTML structure! It's necessary for white spaces -->
+											<span class="black-application-name">shipment</span><span class="blue-application-name">control</span>
+											<span class="black-application-name">collect</span>
+											
+										</a>
+										<ul class="menu-app-companies">
+											
+										</ul>
+									</div>
+								</div>
+							</div>		
+						</div>
+					</div>
+				</div>
+		</servicearea_nav>
+		<div id="show-servicearea-navigation-container">
+			<a id="idbb" href="javascript:;"><img src="./eLogistics_files/show-menu-icon-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/show-menu-icon-ver-1785324664000.png'; this.onerror=null;"></a>
+		</div>	
+		<servicearea_content>
+		
+		<div id="session-timeout-message">
+  
+</div>
+		
+		<div>
+			
+		<article>
+			<h1 id="servicearea-title">
+				<span class="application-title">freightquotation </span>
+				
+				<span class="singleCustomer">JG Supply Chain Technology, Nortorf</span> 
+				
+				<servicearea_help>
+					<a class="help-link" id="idbc" href="javascript:;"> 
+						<img src="./eLogistics_files/helpWhite-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/helpWhite-ver-1785324664000.png'; this.onerror=null;"> 
+						<span>Help</span>
+					</a>
+				</servicearea_help>
+			</h1>
+			<servicearea_application_content> 
+				
+		<div class="tabpanel" id="idee">
+<div class="tab-row">
+<ul>
+	<li class="tab0"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-tabs~container-tabs-0-link" id="id3f0"><span>Enquiry</span></a></li><li class="tab1 selected"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-tabs~container-tabs-1-link" id="id3f1"><span>My enquiries</span></a></li><li class="tab2 last"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-tabs~container-tabs-2-link" id="id3f2"><span>Administration</span></a></li>
+</ul>
+</div>
+<div class="tab-panel" id="idef">
+	<div class="history" id="id55c">
+		<form class="filter-form" id="id3f7" method="post" action="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-filterForm">
+			<div class="search-area">
+				<div class="input-fields">
+					<table class="no-striping">
+						<tbody><tr>
+							<td>
+								<label id="id3eb-w-lbl" for="id3eb">Date from:</label>
+								<input class="basic-input greyTheme hasDatepicker" type="text" value="10/14/2026" name="fromDate" id="id3eb" tabindex="1"><img class="ui-datepicker-trigger" src="./eLogistics_files/datepicker-ver-1785324664000.png" alt="Date" title="Date">
+							</td>
+							<td>
+								<label id="id3ec-w-lbl" for="id3ec">Date to:</label>
+								<input type="text" value="10/21/2026" name="toDate" id="id3ec" class="greyTheme hasDatepicker" tabindex="1"><img class="ui-datepicker-trigger" src="./eLogistics_files/datepicker-ver-1785324664000.png" alt="Date" title="Date">
+							</td>
+							<td>
+								<label id="id3f3-w-lbl" for="id3f3">Order number:</label> 
+								<input class="basic-input" type="text" value="" name="orderNumber" id="id3f3" placeholder="" tabindex="1">
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label id="id3f4-w-lbl" for="id3f4">Consignee name:</label> 
+								<input class="basic-input" type="text" value="" name="consigneeName" id="id3f4" placeholder="" tabindex="1">
+							</td>
+							<td>
+								<label id="id3ed-w-lbl" for="id3ed">Country of destination:</label> 
+								<select class="combobox" name="consigneeCountry" id="id3ed" tabindex="-1" style="opacity: 0; position: absolute; width: 0px;">
+<option selected="selected" value="">- Please select -</option>
+<option value="A">Austria</option>
+<option value="B">Belgium</option>
+<option value="F">France</option>
+<option value="D">Germany</option>
+<option value="GB">Great Britain</option>
+<option value="IRL">Ireland</option>
+<option value="I">Italy</option>
+<option value="LT">Lithuania</option>
+<option value="NL">Netherlands</option>
+<option value="P">Portugal</option>
+<option value="E">Spain</option>
+</select><div class="fineSelect greyTheme id3ed" style="position: relative;"><div><input type="text" class="combobox fineSelect" search_active="true" autocomplete="off" search_favorite="false" wicketpath="undefined_div_input" selected_value="" selected_text="- Please select -" tabindex="1"></div><div class="imgWrapper"><img src="./eLogistics_files/combobox-ver-1785324664000.gif"></div><ul class="fineSelect optlist" style="width: 155.778px; display: none;"><li val="" wicketpath="undefined_div_li_0">- Please select -</li><li val="A" wicketpath="undefined_div_li_1">Austria</li><li val="B" wicketpath="undefined_div_li_2">Belgium</li><li val="F" wicketpath="undefined_div_li_3">France</li><li val="D" wicketpath="undefined_div_li_4">Germany</li><li val="GB" wicketpath="undefined_div_li_5">Great Britain</li><li val="IRL" wicketpath="undefined_div_li_6">Ireland</li><li val="I" wicketpath="undefined_div_li_7">Italy</li><li val="LT" wicketpath="undefined_div_li_8">Lithuania</li><li val="NL" wicketpath="undefined_div_li_9">Netherlands</li><li val="P" wicketpath="undefined_div_li_10">Portugal</li><li val="E" wicketpath="undefined_div_li_11">Spain</li></ul></div>
+							</td>
+							<td>
+								<label id="id3f5-w-lbl" for="id3f5">City of destination:</label> 
+								<input class="basic-input" type="text" value="" name="consigneeCity" id="id3f5" placeholder="" tabindex="1">
+							</td>
+						</tr>
+					</tbody></table>
+				</div>
+				<div class="control-fields">
+					<a class="reset-link disabled" id="id55d"></a>
+					<input type="submit" class="basic-light-button" name="filterButton" id="id3f6" value="Search" tabindex="1">
+				</div>
+			</div>
+		</form>
+		<form id="id3f8" method="post" action="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm">
+			<div id="id55e">
+	<div id="id55f">
+  
+</div>
+	<div class="smart-select-container top-function-container" id="id560">
+		<img src="./eLogistics_files/function-arrow-top-ver-1785324668000.gif">
+		<select name="functionsTop:container:functions" id="id3ee" tabindex="-1" style="opacity: 0; position: absolute; width: 0px;">
+<option selected="selected" value="">- Please select -</option>
+<option value="DELETE">Delete</option>
+<option value="DISPLAY">Display</option>
+<option value="PRINT">Print</option>
+</select><div class="fineSelect greyTheme id3ee" style="position: relative;"><div><input type="text" class="undefined fineSelect" search_active="true" autocomplete="off" search_favorite="false" wicketpath="undefined_div_input" selected_value="" selected_text="- Please select -" tabindex="1"></div><div class="imgWrapper"><img src="./eLogistics_files/combobox-ver-1785324664000.gif"></div><ul class="fineSelect optlist" style="width: 167.778px; display: none;"><li val="" wicketpath="undefined_div_li_0">- Please select -</li><li val="DELETE" wicketpath="undefined_div_li_1">Delete</li><li val="DISPLAY" wicketpath="undefined_div_li_2">Display</li><li val="PRINT" wicketpath="undefined_div_li_3">Print</li></ul></div>
+		<button class="basic-light-button" name="functionsTop:container:execute" id="id55a">Execute</button>
+	</div>
+	
+</div>
+			<div id="id561">
+    <div id="id563">
+    </div><div id="id56b">
+    </div><div id="id56d">
+    </div><div id="id56e">
+    </div><div id="id570">
+    </div><div id="id571">
+    </div><div id="id573">
+    </div><div id="id574">
+    </div><div id="id576">
+    </div><div id="id577">
+    </div><div id="id579">
+    </div><div id="id57a">
+    </div><div id="id57c">
+    </div><div id="id57d">
+    </div><div id="id57f">
+    </div><div id="id580">
+    </div><div id="id582">
+    </div><div id="id583">
+    </div><div id="id585">
+    </div><div id="id586">
+    </div><div id="id588">
+    </div><div id="id589">
+    </div><div id="id58b">
+    </div><div id="id58c">
+    </div><div id="id58e">
+    </div><div id="id58f">
+    </div><div id="id591">
+    </div><div id="id592">
+    </div><div id="id594">
+    </div><div id="id595">
+    </div><div id="id597">
+    </div><div id="id598">
+    </div><div id="id59a">
+    </div><div id="id59b">
+    </div><div id="id59d">
+    </div><div id="id59e">
+    </div><div id="id5a0">
+    </div><div id="id5a1">
+    </div><div id="id5a3">
+    </div><div id="id5a4">
+    </div><div id="id5a6">
+    </div><div id="id5a7">
+    </div><div id="id5a9">
+    </div><div id="id5aa">
+    </div><div id="id5ac">
+    </div><div id="id5ad">
+    </div><div id="id5af">
+    </div><div id="id5b0">
+    </div><div id="id5b2">
+    </div><div id="id5b3">
+    </div><div id="id5b5">
+    </div><div id="id5b6">
+    </div><div id="id5b8">
+    </div><div id="id5b9">
+    </div><div id="id5bb">
+    </div><div id="id5bc">
+    </div><div id="id5be">
+    </div><div id="id5bf">
+    </div><div id="id5c1">
+    </div><div id="id5c2">
+    </div><div id="id5c4">
+    </div><div id="id5c5">
+    </div><div id="id5c7">
+    </div><div id="id5c8">
+    </div><div id="id5ca">
+    </div><div id="id5cb">
+    </div><div id="id5cd">
+    </div><div id="id5ce">
+    </div><div id="id5d0">
+    </div><div id="id5d1">
+    </div><div id="id5d3">
+    </div><div id="id5d4">
+    </div><div id="id5d6">
+    </div><div id="id5d7">
+    </div><div id="id5d9">
+    </div><div id="id5da">
+    </div><div id="id5dc">
+    </div><div id="id5dd">
+    </div><div id="id5df">
+    </div><div id="id5e0">
+    </div><div id="id5e2">
+    </div><div id="id5e3">
+    </div><div id="id5e5">
+    </div><div id="id5e6">
+    </div><div id="id5e8">
+    </div><div id="id5e9">
+    </div><div id="id5eb">
+    </div><div id="id5ec">
+    </div><div id="id5ee">
+    </div><div id="id5ef">
+    </div><div id="id5f1">
+    </div><div id="id5f2">
+    </div><div id="id5f4">
+    </div><div id="id5f5">
+    </div><div id="id5f8">
+    </div><div id="id5f9">
+    </div><div id="id5fb">
+    </div><div id="id5fc">
+    </div><div id="id5fe">
+    </div><div id="id5ff">
+    </div><div id="id601">
+    </div><div id="id602">
+    </div><div id="id604">
+    </div><div id="id605">
+    </div><div id="id607">
+    </div><div id="id608">
+    </div><div id="id60a">
+    </div><div id="id60b">
+    </div><div id="id60d">
+    </div><div id="id60e">
+    </div><div id="id611">
+    </div><div id="id612">
+    </div><div id="id614">
+    </div><div id="id615">
+    </div><div id="id617">
+    </div><div id="id618">
+    </div><div id="id61a">
+    </div><div id="id61b">
+    </div><div id="id61d">
+    </div><div id="id61e">
+    </div><div id="id620">
+    </div><div id="id621">
+    </div><div id="id623">
+    </div><div id="id624">
+    </div><div id="id627">
+    </div><div id="id628">
+    </div><div id="id62b">
+    </div><div id="id62c">
+    </div><div id="id62e">
+    </div><div id="id62f">
+    </div><div id="id632">
+    </div><div id="id633">
+    </div><div id="id635">
+    </div><div id="id636">
+    </div><div id="id638">
+    </div><div id="id639">
+    </div><div id="id63b">
+    </div><div id="id63c">
+    </div><div id="id63e">
+    </div><div id="id63f">
+    </div><div id="id641">
+    </div><div id="id642">
+    </div><div id="id644">
+    </div><div id="id645">
+    </div><div id="id647">
+    </div><div id="id648">
+    </div><div id="id64b">
+    </div><div id="id64c">
+    </div><div id="id64f">
+    </div><div id="id650">
+    </div><div id="id652">
+    </div><div id="id653">
+    </div><div id="id656">
+    </div><div id="id657">
+    </div><div id="id65a">
+    </div><div id="id65b">
+    </div><div id="id65e">
+    </div><div id="id65f">
+    </div><div id="id661">
+    </div><div id="id662">
+    </div><div id="id665">
+    </div><div id="id666">
+    </div><div id="id668">
+    </div><div id="id669">
+    </div><div id="id66c">
+    </div><div id="id66d">
+    </div><div id="id670">
+    </div><div id="id671">
+    </div><div id="id673">
+    </div><div id="id674">
+    </div><div id="id677">
+    </div><div id="id678">
+    </div><div id="id67a">
+    </div><div id="id67b">
+    </div><div id="id67e">
+    </div><div id="id67f">
+    </div><div id="id681">
+    </div><div id="id682">
+    </div><div id="id685">
+    </div><div id="id686">
+    </div><div id="id689">
+    </div><div id="id68a">
+    </div><div id="id68d">
+    </div><div id="id68e">
+    </div><div id="id690">
+    </div><table class="specialTable clickable" width="800px" id="id562">
+        <tbody><tr class="head fw_clearFloating">
+        <th>
+            <div class="frgHeader0">
+        <input type="checkbox" id="allRows" name="historyTable:table:pnlTableHeader:lstTableHeaders:1:frgHeader:chkHeader" tabindex="1">
+    </div>
+        </th><th>
+            <div id="id564" class="frgHeader1">
+        <div class="wicket_orderNone wicket_orderDown"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-2-frgHeader-orderBy-orderByLink" id="id554">
+            <div class="tooltip">
+                <span>Enquiry from</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th>
+            <div id="id565" class="frgHeader2">
+        <div class="wicket_orderNone wicket_orderNone"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-3-frgHeader-orderBy-orderByLink" id="id555">
+            <div class="tooltip">
+                <span>Order number</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th>
+            <div id="id566" class="frgHeader3">
+        <div class="wicket_orderNone wicket_orderNone"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-4-frgHeader-orderBy-orderByLink" id="id556">
+            <div class="tooltip">
+                <span>Consignee</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th>
+            <div id="id567" class="frgHeader4">
+        <div class="wicket_orderNone wicket_orderNone"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-5-frgHeader-orderBy-orderByLink" id="id557">
+            <div class="tooltip">
+                <span>Weight</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th>
+            <div id="id568" class="frgHeader5">
+        <div class="wicket_orderNone wicket_orderNone"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-6-frgHeader-orderBy-orderByLink" id="id558">
+            <div class="tooltip">
+                <span>Price</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th>
+            <div id="id569" class="frgHeader6">
+        <div class="wicket_orderNone wicket_orderNone"><a href="https://elogistics.dachser.com/frqs/index?1-1.-tabs-panel-history-tableForm-historyTable-table-pnlTableHeader-lstTableHeaders-7-frgHeader-orderBy-orderByLink" id="id559">
+            <div class="tooltip">
+                <span>Order</span>
+                
+            </div>
+        </a></div>
+    </div>
+        </th><th class="flyouttoolbar">
+            <div class="frgHeader7">
+        <div class="wicket_orderNone" id="id56a">
+            <div class="tooltip">
+                <span></span>
+                
+            </div>
+        </div>
+    </div>
+        </th>
+    </tr>
+
+    
+
+    
+
+
+
+        <tr id="id3fc">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:1:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">16:14</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101414</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 37586 Dassel</span>
+	</td>
+	<td class="text-right">
+		<span>90 kg</span>
+	</td>
+	<td class="text-right">
+		<span>127,24  EUR</span>
+	</td>
+	
+
+	<td id="id56c">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:1:createOrder:createOrderButton" id="id3f9" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id3fa" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id3fb" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id400">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:2:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">16:11</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101513</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 06526 Sangerhausen</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>108,74  EUR</span>
+	</td>
+	
+
+	<td id="id56f">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:2:createOrder:createOrderButton" id="id3fd" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id3fe" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id3ff" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id404">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:3:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">16:04</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100817</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 79117 Freiburg</span>
+	</td>
+	<td class="text-right">
+		<span>80 kg</span>
+	</td>
+	<td class="text-right">
+		<span>139,20  EUR</span>
+	</td>
+	
+
+	<td id="id572">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:3:createOrder:createOrderButton" id="id401" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id402" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id403" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id408">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:4:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">16:03</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101607</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 95150 TAVERNY</span>
+	</td>
+	<td class="text-right">
+		<span>57 kg</span>
+	</td>
+	<td class="text-right">
+		<span>136,71  EUR</span>
+	</td>
+	
+
+	<td id="id575">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:4:createOrder:createOrderButton" id="id405" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id406" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id407" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id40c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:5:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:46</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101419</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 92269 Fensterbach</span>
+	</td>
+	<td class="text-right">
+		<span>57 kg</span>
+	</td>
+	<td class="text-right">
+		<span>117,25  EUR</span>
+	</td>
+	
+
+	<td id="id578">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:5:createOrder:createOrderButton" id="id409" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id40a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id40b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id410">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:6:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:45</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092406</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 88255 Baindt</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>123,10  EUR</span>
+	</td>
+	
+
+	<td id="id57b">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:6:createOrder:createOrderButton" id="id40d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id40e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id40f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id414">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:7:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:43</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100208-1 to 7</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>LT 21142 Trakai District</span>
+	</td>
+	<td class="text-right">
+		<span>1 201 kg</span>
+	</td>
+	<td class="text-right">
+		<span>661,09  EUR</span>
+	</td>
+	
+
+	<td id="id57e">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:7:createOrder:createOrderButton" id="id411" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id412" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id413" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id418">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:8:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:25</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101318</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 55585 Niederhausen</span>
+	</td>
+	<td class="text-right">
+		<span>66 kg</span>
+	</td>
+	<td class="text-right">
+		<span>113,10  EUR</span>
+	</td>
+	
+
+	<td id="id581">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:8:createOrder:createOrderButton" id="id415" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id416" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id417" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id41c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:9:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:19</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101313</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>IRL  KILKENNY</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>210,37  EUR</span>
+	</td>
+	
+
+	<td id="id584">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:9:createOrder:createOrderButton" id="id419" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id41a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id41b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id420">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:10:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:06</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101307+MR26101310-a/b</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>I 52029 CASTIGLION FIBOCCHI</span>
+	</td>
+	<td class="text-right">
+		<span>1 021 kg</span>
+	</td>
+	<td class="text-right">
+		<span>621,10  EUR</span>
+	</td>
+	
+
+	<td id="id587">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:10:createOrder:createOrderButton" id="id41d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id41e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id41f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id424">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:11:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:06</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101307+MR26101310-a/b</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 52029 CASTIGLION FIBOCCHI</span>
+	</td>
+	<td class="text-right">
+		<span>2 042 kg</span>
+	</td>
+	<td class="text-right">
+		<span>962,00  EUR</span>
+	</td>
+	
+
+	<td id="id58a">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:11:createOrder:createOrderButton" id="id421" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id422" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id423" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id428">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:12:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:04</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101306</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 48249 Dülmen</span>
+	</td>
+	<td class="text-right">
+		<span>50 kg</span>
+	</td>
+	<td class="text-right">
+		<span>101,13  EUR</span>
+	</td>
+	
+
+	<td id="id58d">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:12:createOrder:createOrderButton" id="id425" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id426" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id427" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id42c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:13:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/21/2026</span>
+		<span class="time">09:02</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101217</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 74523 BUEHLERZIMMERN</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>114,12  EUR</span>
+	</td>
+	
+
+	<td id="id590">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:13:createOrder:createOrderButton" id="id429" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id42a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id42b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id430">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:14:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">14:44</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>E 46290 Valencia</span>
+	</td>
+	<td class="text-right">
+		<span>2 240 kg</span>
+	</td>
+	<td class="text-right">
+		<span>949,62  EUR</span>
+	</td>
+	
+
+	<td id="id593">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:14:createOrder:createOrderButton" id="id42d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id42e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id42f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id434">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:15:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">14:44</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>E 46290 Valencia</span>
+	</td>
+	<td class="text-right">
+		<span>2 240 kg</span>
+	</td>
+	<td class="text-right">
+		<span>949,62  EUR</span>
+	</td>
+	
+
+	<td id="id596">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:15:createOrder:createOrderButton" id="id431" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id432" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id433" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id438">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:16:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">14:43</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>E 46290 Valencia</span>
+	</td>
+	<td class="text-right">
+		<span>580 kg</span>
+	</td>
+	<td class="text-right">
+		<span>363,13  EUR</span>
+	</td>
+	
+
+	<td id="id599">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:16:createOrder:createOrderButton" id="id435" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id436" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id437" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id43c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:17:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:32</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101001</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 1731 Relegem</span>
+	</td>
+	<td class="text-right">
+		<span>1 021 kg</span>
+	</td>
+	<td class="text-right">
+		<span>473,13  EUR</span>
+	</td>
+	
+
+	<td id="id59c">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:17:createOrder:createOrderButton" id="id439" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id43a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id43b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id440">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:18:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:30</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100622-a+b</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>A 3910 BOEHMHOEF</span>
+	</td>
+	<td class="text-right">
+		<span>1 000 kg</span>
+	</td>
+	<td class="text-right">
+		<span>500,50  EUR</span>
+	</td>
+	
+
+	<td id="id59f">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:18:createOrder:createOrderButton" id="id43d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id43e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id43f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id444">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:19:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:30</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100622-a+b</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 3910 BOEHMHOEF</span>
+	</td>
+	<td class="text-right">
+		<span>2 000 kg</span>
+	</td>
+	<td class="text-right">
+		<span>775,61  EUR</span>
+	</td>
+	
+
+	<td id="id5a2">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:19:createOrder:createOrderButton" id="id441" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id442" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id443" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id448">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:20:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:24</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100813</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 8510 Kortrijk</span>
+	</td>
+	<td class="text-right">
+		<span>2 042 kg</span>
+	</td>
+	<td class="text-right">
+		<span>704,05  EUR</span>
+	</td>
+	
+
+	<td id="id5a5">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:20:createOrder:createOrderButton" id="id445" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id446" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id447" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id44c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:21:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:23</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101006</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 8531 Hulste</span>
+	</td>
+	<td class="text-right">
+		<span>225 kg</span>
+	</td>
+	<td class="text-right">
+		<span>280,32  EUR</span>
+	</td>
+	
+
+	<td id="id5a8">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:21:createOrder:createOrderButton" id="id449" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id44a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id44b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id450">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:22:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:21</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100911</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 9000 Eeklo</span>
+	</td>
+	<td class="text-right">
+		<span>105 kg</span>
+	</td>
+	<td class="text-right">
+		<span>127,03  EUR</span>
+	</td>
+	
+
+	<td id="id5ab">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:22:createOrder:createOrderButton" id="id44d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id44e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id44f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id454">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:23:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:10</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100208-1/7</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>LT 08200 VILNIUS</span>
+	</td>
+	<td class="text-right">
+		<span>840 kg</span>
+	</td>
+	<td class="text-right">
+		<span>478,64  EUR</span>
+	</td>
+	
+
+	<td id="id5ae">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:23:createOrder:createOrderButton" id="id451" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id452" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id453" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id458">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:24:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/20/2026</span>
+		<span class="time">10:10</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100208-1/7</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>LT 08200 VILNIUS</span>
+	</td>
+	<td class="text-right">
+		<span>2 060 kg</span>
+	</td>
+	<td class="text-right">
+		<span>859,56  EUR</span>
+	</td>
+	
+
+	<td id="id5b1">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:24:createOrder:createOrderButton" id="id455" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id456" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id457" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id45c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:25:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">15:21</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101401</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 2520 Ranst</span>
+	</td>
+	<td class="text-right">
+		<span>57 kg</span>
+	</td>
+	<td class="text-right">
+		<span>114,69  EUR</span>
+	</td>
+	
+
+	<td id="id5b4">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:25:createOrder:createOrderButton" id="id459" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id45a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id45b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id460">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:26:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">15:20</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 84307 Eggenfelden</span>
+	</td>
+	<td class="text-right">
+		<span>107 kg</span>
+	</td>
+	<td class="text-right">
+		<span>119,63  EUR</span>
+	</td>
+	
+
+	<td id="id5b7">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:26:createOrder:createOrderButton" id="id45d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id45e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id45f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id464">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:27:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">15:18</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101215</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 1210 Wien</span>
+	</td>
+	<td class="text-right">
+		<span>115 kg</span>
+	</td>
+	<td class="text-right">
+		<span>161,86  EUR</span>
+	</td>
+	
+
+	<td id="id5ba">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:27:createOrder:createOrderButton" id="id461" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id462" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id463" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id468">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:28:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">11:00</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101311</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 8225 Pöllau</span>
+	</td>
+	<td class="text-right">
+		<span>50 kg</span>
+	</td>
+	<td class="text-right">
+		<span>147,42  EUR</span>
+	</td>
+	
+
+	<td id="id5bd">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:28:createOrder:createOrderButton" id="id465" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id466" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id467" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id46c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:29:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:53</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100916</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 14641 Nauen</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>101,13  EUR</span>
+	</td>
+	
+
+	<td id="id5c0">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:29:createOrder:createOrderButton" id="id469" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id46a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id46b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id470">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:30:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:52</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092414</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 85221 Dachau</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>119,63  EUR</span>
+	</td>
+	
+
+	<td id="id5c3">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:30:createOrder:createOrderButton" id="id46d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id46e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id46f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id474">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:31:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:51</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100905</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 75025 POLICORO</span>
+	</td>
+	<td class="text-right">
+		<span>113 kg</span>
+	</td>
+	<td class="text-right">
+		<span>204,28  EUR</span>
+	</td>
+	
+
+	<td id="id5c6">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:31:createOrder:createOrderButton" id="id471" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id472" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id473" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id478">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:32:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:49</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100804</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 73035 Göppingen</span>
+	</td>
+	<td class="text-right">
+		<span>170 kg</span>
+	</td>
+	<td class="text-right">
+		<span>198,83  EUR</span>
+	</td>
+	
+
+	<td id="id5c9">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:32:createOrder:createOrderButton" id="id475" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id476" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id477" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id47c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:33:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:47</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100716</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 48529 Nordho</span>
+	</td>
+	<td class="text-right">
+		<span>90 kg</span>
+	</td>
+	<td class="text-right">
+		<span>102,67  EUR</span>
+	</td>
+	
+
+	<td id="id5cc">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:33:createOrder:createOrderButton" id="id479" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id47a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id47b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id480">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:34:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:46</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100712</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 9550 Herzele</span>
+	</td>
+	<td class="text-right">
+		<span>145 kg</span>
+	</td>
+	<td class="text-right">
+		<span>152,76  EUR</span>
+	</td>
+	
+
+	<td id="id5cf">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:34:createOrder:createOrderButton" id="id47d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id47e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id47f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id484">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:35:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:44</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100618</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 3220 Holsbeek - Vlaams-Brabant</span>
+	</td>
+	<td class="text-right">
+		<span>65 kg</span>
+	</td>
+	<td class="text-right">
+		<span>114,69  EUR</span>
+	</td>
+	
+
+	<td id="id5d2">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:35:createOrder:createOrderButton" id="id481" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id482" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id483" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id488">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:36:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:43</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100612</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>D 83626 Valley</span>
+	</td>
+	<td class="text-right">
+		<span>153 kg</span>
+	</td>
+	<td class="text-right">
+		<span>145,70  EUR</span>
+	</td>
+	
+
+	<td id="id5d5">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:36:createOrder:createOrderButton" id="id485" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id486" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id487" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id48c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:37:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:42</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100505</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 66386 St. Ingbert</span>
+	</td>
+	<td class="text-right">
+		<span>63 kg</span>
+	</td>
+	<td class="text-right">
+		<span>116,22  EUR</span>
+	</td>
+	
+
+	<td id="id5d8">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:37:createOrder:createOrderButton" id="id489" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id48a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id48b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id490">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:38:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:40</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100114</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 9554 St. Urban</span>
+	</td>
+	<td class="text-right">
+		<span>50 kg</span>
+	</td>
+	<td class="text-right">
+		<span>152,02  EUR</span>
+	</td>
+	
+
+	<td id="id5db">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:38:createOrder:createOrderButton" id="id48d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id48e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id48f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id494">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:39:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">10:39</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100113</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 48529 NORDHORN</span>
+	</td>
+	<td class="text-right">
+		<span>113 kg</span>
+	</td>
+	<td class="text-right">
+		<span>109,17  EUR</span>
+	</td>
+	
+
+	<td id="id5de">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:39:createOrder:createOrderButton" id="id491" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id492" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id493" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id498">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:40:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">09:05</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100112</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 5134 Handenberg</span>
+	</td>
+	<td class="text-right">
+		<span>177 kg</span>
+	</td>
+	<td class="text-right">
+		<span>159,89  EUR</span>
+	</td>
+	
+
+	<td id="id5e1">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:40:createOrder:createOrderButton" id="id495" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id496" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id497" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id49c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:41:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">09:03</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100105</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 87350 Panazol</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>177,07  EUR</span>
+	</td>
+	
+
+	<td id="id5e4">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:41:createOrder:createOrderButton" id="id499" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id49a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id49b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4a0">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:42:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">08:23</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>EWAY</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 45360 Châtillon sur Loire</span>
+	</td>
+	<td class="text-right">
+		<span>1 020 kg</span>
+	</td>
+	<td class="text-right">
+		<span>539,38  EUR</span>
+	</td>
+	
+
+	<td id="id5e7">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:42:createOrder:createOrderButton" id="id49d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id49e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id49f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4a4">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:43:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/19/2026</span>
+		<span class="time">08:22</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>EWAY</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 45360 Châtillon sur Loire</span>
+	</td>
+	<td class="text-right">
+		<span>2 400 kg</span>
+	</td>
+	<td class="text-right">
+		<span>920,72  EUR</span>
+	</td>
+	
+
+	<td id="id5ea">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:43:createOrder:createOrderButton" id="id4a1" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4a2" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4a3" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4a8">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:44:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">14:27</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100813</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 8510 BELLEGEM</span>
+	</td>
+	<td class="text-right">
+		<span>2 050 kg</span>
+	</td>
+	<td class="text-right">
+		<span>743,55  EUR</span>
+	</td>
+	
+
+	<td id="id5ed">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:44:createOrder:createOrderButton" id="id4a5" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4a6" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4a7" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4ac">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:45:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">14:25</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26101006</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 8531 BAVIKHOVE</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>152,76  EUR</span>
+	</td>
+	
+
+	<td id="id5f0">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:45:createOrder:createOrderButton" id="id4a9" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4aa" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4ab" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4b0">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:46:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">14:24</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100911</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 9000 Eeklo</span>
+	</td>
+	<td class="text-right">
+		<span>105 kg</span>
+	</td>
+	<td class="text-right">
+		<span>152,76  EUR</span>
+	</td>
+	
+
+	<td id="id5f3">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:46:createOrder:createOrderButton" id="id4ad" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4ae" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4af" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4b3">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:47:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">11:41</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>OBS0132610100RS+ZR-0821-3</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>P 4920-020 Candemil</span>
+	</td>
+	<td class="text-right">
+		<span>180 kg</span>
+	</td>
+	<td class="text-right">
+		<span>209,37  EUR</span>
+	</td>
+	
+
+	<td id="id5f6">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:47:createOrder:createOrderButton" disabled="disabled" id="id5f7" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4b1" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4b2" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4b7">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:48:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">09:14</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>ANJIE</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>GB BL3 2NZ Bolton</span>
+	</td>
+	<td class="text-right">
+		<span>900 kg</span>
+	</td>
+	<td class="text-right">
+		<span>825,57  EUR</span>
+	</td>
+	
+
+	<td id="id5fa">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:48:createOrder:createOrderButton" id="id4b4" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4b5" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4b6" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4bb">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:49:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">09:14</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>ANJIE</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>GB BL3 2NZ Bolton</span>
+	</td>
+	<td class="text-right">
+		<span>900 kg</span>
+	</td>
+	<td class="text-right">
+		<span>775,57  EUR</span>
+	</td>
+	
+
+	<td id="id5fd">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:49:createOrder:createOrderButton" id="id4b8" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4b9" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4ba" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4bf">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:50:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">09:08</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>ANJIE</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>GB BL3 2NZ Manchester Rd</span>
+	</td>
+	<td class="text-right">
+		<span>900 kg</span>
+	</td>
+	<td class="text-right">
+		<span>803,07  EUR</span>
+	</td>
+	
+
+	<td id="id600">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:50:createOrder:createOrderButton" id="id4bc" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4bd" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4be" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4c3">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:51:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/16/2026</span>
+		<span class="time">09:04</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>ANJIE</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>GB BL3 2NZ Manchester Rd</span>
+	</td>
+	<td class="text-right">
+		<span>900 kg</span>
+	</td>
+	<td class="text-right">
+		<span>803,07  EUR</span>
+	</td>
+	
+
+	<td id="id603">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:51:createOrder:createOrderButton" id="id4c0" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4c1" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4c2" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4c7">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:52:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">11:12</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 26845 CODOGNO</span>
+	</td>
+	<td class="text-right">
+		<span>601 kg</span>
+	</td>
+	<td class="text-right">
+		<span>667,33  EUR</span>
+	</td>
+	
+
+	<td id="id606">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:52:createOrder:createOrderButton" id="id4c4" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4c5" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4c6" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4cb">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:53:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">11:11</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>I 26845 CODOGNO</span>
+	</td>
+	<td class="text-right">
+		<span>928 kg</span>
+	</td>
+	<td class="text-right">
+		<span>993,30  EUR</span>
+	</td>
+	
+
+	<td id="id609">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:53:createOrder:createOrderButton" id="id4c8" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4c9" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4ca" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4cf">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:54:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">11:10</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 26845 CODOGNO</span>
+	</td>
+	<td class="text-right">
+		<span>327 kg</span>
+	</td>
+	<td class="text-right">
+		<span>497,71  EUR</span>
+	</td>
+	
+
+	<td id="id60c">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:54:createOrder:createOrderButton" id="id4cc" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4cd" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4ce" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4d2">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:55:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">10:00</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>EWAY</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>E 25123 Torrefarrera</span>
+	</td>
+	<td class="text-right">
+		<span>1 200 kg</span>
+	</td>
+	<td class="text-right">
+		<span>587,45  EUR</span>
+	</td>
+	
+
+	<td id="id60f">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:55:createOrder:createOrderButton" disabled="disabled" id="id610" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4d0" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4d1" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4d6">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:56:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">09:59</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>EWAY</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>A 8424 Gabersdorf</span>
+	</td>
+	<td class="text-right">
+		<span>1 291 kg</span>
+	</td>
+	<td class="text-right">
+		<span>663,83  EUR</span>
+	</td>
+	
+
+	<td id="id613">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:56:createOrder:createOrderButton" id="id4d3" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4d4" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4d5" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4d9">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:57:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:55</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>YDS</span>
+	</td>
+	<td class="word-break">
+		<span>JG Supply Chain Technology<br>D 24589 Nortorf</span>
+	</td>
+	<td class="text-right">
+		<span>85 kg</span>
+	</td>
+	<td class="text-right">
+		<span>221,42  EUR</span>
+	</td>
+	
+
+	<td id="id616">
+		
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4d7" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4d8" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4dd">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:58:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:53</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100902</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 38170 SEYSSINET PARISET</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>175,00  EUR</span>
+	</td>
+	
+
+	<td id="id619">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:58:createOrder:createOrderButton" id="id4da" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4db" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4dc" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4e1">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:59:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:52</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100715</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 57548 Kirchen (Sieg)</span>
+	</td>
+	<td class="text-right">
+		<span>90 kg</span>
+	</td>
+	<td class="text-right">
+		<span>91,67  EUR</span>
+	</td>
+	
+
+	<td id="id61c">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:59:createOrder:createOrderButton" id="id4de" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4df" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4e0" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4e5">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:60:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:31</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100616</span>
+	</td>
+	<td class="word-break">
+		<span>Antoine Willems<br>NL 2135 HOOFDDORP</span>
+	</td>
+	<td class="text-right">
+		<span>140 kg</span>
+	</td>
+	<td class="text-right">
+		<span>149,91  EUR</span>
+	</td>
+	
+
+	<td id="id61f">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:60:createOrder:createOrderButton" id="id4e2" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4e3" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4e4" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4e9">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:61:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:30</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100615</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 16727 OBERKRAEMER</span>
+	</td>
+	<td class="text-right">
+		<span>120 kg</span>
+	</td>
+	<td class="text-right">
+		<span>102,67  EUR</span>
+	</td>
+	
+
+	<td id="id622">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:61:createOrder:createOrderButton" id="id4e6" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4e7" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4e8" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4ec">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:62:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:29</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100610</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 85669 Pastetten</span>
+	</td>
+	<td class="text-right">
+		<span>50 kg</span>
+	</td>
+	<td class="text-right">
+		<span>119,63  EUR</span>
+	</td>
+	
+
+	<td id="id625">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:62:createOrder:createOrderButton" disabled="disabled" id="id626" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4ea" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4eb" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4ef">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:63:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:27</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100607</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 12435 Berlin</span>
+	</td>
+	<td class="text-right">
+		<span>50 kg</span>
+	</td>
+	<td class="text-right">
+		<span>108,63  EUR</span>
+	</td>
+	
+
+	<td id="id629">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:63:createOrder:createOrderButton" disabled="disabled" id="id62a" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4ed" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4ee" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4f3">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:64:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:26</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100501</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 74374 Zaberfeld</span>
+	</td>
+	<td class="text-right">
+		<span>90 kg</span>
+	</td>
+	<td class="text-right">
+		<span>102,25  EUR</span>
+	</td>
+	
+
+	<td id="id62d">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:64:createOrder:createOrderButton" id="id4f0" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4f1" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4f2" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4f6">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:65:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:25</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100107</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 85670 Palluau</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>183,87  EUR</span>
+	</td>
+	
+
+	<td id="id630">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:65:createOrder:createOrderButton" disabled="disabled" id="id631" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4f4" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4f5" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4fa">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:66:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:23</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100104</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 42210 Saint André le PUY</span>
+	</td>
+	<td class="text-right">
+		<span>90 kg</span>
+	</td>
+	<td class="text-right">
+		<span>162,07  EUR</span>
+	</td>
+	
+
+	<td id="id634">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:66:createOrder:createOrderButton" id="id4f7" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4f8" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4f9" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id4fe">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:67:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:22</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26093016</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 09456 Annaberg-Buchholz</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>112,17  EUR</span>
+	</td>
+	
+
+	<td id="id637">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:67:createOrder:createOrderButton" id="id4fb" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id4fc" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id4fd" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id502">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:68:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:19</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity-MR26093014</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 55437 Ockenheim</span>
+	</td>
+	<td class="text-right">
+		<span>103 kg</span>
+	</td>
+	<td class="text-right">
+		<span>122,38  EUR</span>
+	</td>
+	
+
+	<td id="id63a">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:68:createOrder:createOrderButton" id="id4ff" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id500" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id501" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id505">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:69:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:15</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity-YDS</span>
+	</td>
+	<td class="word-break">
+		<span>JG Supply Chain Technology<br>D 24589 Nortorf</span>
+	</td>
+	<td class="text-right">
+		<span>135 kg</span>
+	</td>
+	<td class="text-right">
+		<span>227,92  EUR</span>
+	</td>
+	
+
+	<td id="id63d">
+		
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id503" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id504" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id508">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:70:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/15/2026</span>
+		<span class="time">08:14</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity-YDS</span>
+	</td>
+	<td class="word-break">
+		<span>JG Supply Chain Technology<br>D 24589 Nortorf</span>
+	</td>
+	<td class="text-right">
+		<span>148 kg</span>
+	</td>
+	<td class="text-right">
+		<span>227,92  EUR</span>
+	</td>
+	
+
+	<td id="id640">
+		
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id506" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id507" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id50c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:71:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">20:05</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 90768 FUERTH</span>
+	</td>
+	<td class="text-right">
+		<span>85 kg</span>
+	</td>
+	<td class="text-right">
+		<span>156,88  EUR</span>
+	</td>
+	
+
+	<td id="id643">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:71:createOrder:createOrderButton" id="id509" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id50a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id50b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id510">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:72:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">17:24</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 26845 CODOGNO</span>
+	</td>
+	<td class="text-right">
+		<span>1 500 kg</span>
+	</td>
+	<td class="text-right">
+		<span>877,34  EUR</span>
+	</td>
+	
+
+	<td id="id646">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:72:createOrder:createOrderButton" id="id50d" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id50e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id50f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id513">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:73:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">16:26</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>Sagacity-ZR-0807-14-OBS0132610130RT</span>
+	</td>
+	<td class="word-break">
+		<span>Jean-Claude HAW-KING-CHON<br>F 31450 CORRONSAC</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>199,45  EUR</span>
+	</td>
+	
+
+	<td id="id649">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:73:createOrder:createOrderButton" disabled="disabled" id="id64a" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id511" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id512" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id516">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:74:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:53</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092811</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 59174 Kamen</span>
+	</td>
+	<td class="text-right">
+		<span>80 kg</span>
+	</td>
+	<td class="text-right">
+		<span>77,67  EUR</span>
+	</td>
+	
+
+	<td id="id64d">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:74:createOrder:createOrderButton" disabled="disabled" id="id64e" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id514" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id515" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id51a">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:75:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:52</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092907</span>
+	</td>
+	<td class="word-break">
+		<span>Miscellaneous customer<br>D 83317 KOPPELSTADT</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>124,53  EUR</span>
+	</td>
+	
+
+	<td id="id651">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:75:createOrder:createOrderButton" id="id517" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id518" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id519" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id51d">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:76:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:52</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092907</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 83317 KOPPELSTADT</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>99,53  EUR</span>
+	</td>
+	
+
+	<td id="id654">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:76:createOrder:createOrderButton" disabled="disabled" id="id655" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id51b" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id51c" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id520">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:77:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:51</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26092909</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 85095 Denkendorf</span>
+	</td>
+	<td class="text-right">
+		<span>80 kg</span>
+	</td>
+	<td class="text-right">
+		<span>125,12  EUR</span>
+	</td>
+	
+
+	<td id="id658">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:77:createOrder:createOrderButton" disabled="disabled" id="id659" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id51e" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id51f" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id523">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:78:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:37</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100917</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 01454 RADEBERG</span>
+	</td>
+	<td class="text-right">
+		<span>60 kg</span>
+	</td>
+	<td class="text-right">
+		<span>118,67  EUR</span>
+	</td>
+	
+
+	<td id="id65c">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:78:createOrder:createOrderButton" disabled="disabled" id="id65d" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id521" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id522" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id527">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:79:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:35</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100912</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 2940 Stabroek</span>
+	</td>
+	<td class="text-right">
+		<span>70 kg</span>
+	</td>
+	<td class="text-right">
+		<span>113,69  EUR</span>
+	</td>
+	
+
+	<td id="id660">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:79:createOrder:createOrderButton" id="id524" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id525" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id526" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id52a">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:80:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:33</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100811</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 17235 Neustrelitz</span>
+	</td>
+	<td class="text-right">
+		<span>60 kg</span>
+	</td>
+	<td class="text-right">
+		<span>103,33  EUR</span>
+	</td>
+	
+
+	<td id="id663">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:80:createOrder:createOrderButton" disabled="disabled" id="id664" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id528" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id529" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id52e">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:81:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:27</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100714</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 86825 Bad Wörishofen</span>
+	</td>
+	<td class="text-right">
+		<span>121 kg</span>
+	</td>
+	<td class="text-right">
+		<span>127,20  EUR</span>
+	</td>
+	
+
+	<td id="id667">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:81:createOrder:createOrderButton" id="id52b" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id52c" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id52d" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id531">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:82:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:25</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100626</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 86845 Großaitingen</span>
+	</td>
+	<td class="text-right">
+		<span>60 kg</span>
+	</td>
+	<td class="text-right">
+		<span>123,73  EUR</span>
+	</td>
+	
+
+	<td id="id66a">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:82:createOrder:createOrderButton" disabled="disabled" id="id66b" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id52f" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id530" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id534">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:83:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:23</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100621</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 2950 Kapellen</span>
+	</td>
+	<td class="text-right">
+		<span>145 kg</span>
+	</td>
+	<td class="text-right">
+		<span>128,69  EUR</span>
+	</td>
+	
+
+	<td id="id66e">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:83:createOrder:createOrderButton" disabled="disabled" id="id66f" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id532" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id533" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id538">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:84:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:04</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100619</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>B 9472 Iddergem</span>
+	</td>
+	<td class="text-right">
+		<span>60 kg</span>
+	</td>
+	<td class="text-right">
+		<span>133,53  EUR</span>
+	</td>
+	
+
+	<td id="id672">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:84:createOrder:createOrderButton" id="id535" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id536" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id537" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id53b">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:85:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">11:02</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100507</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 53773 HENNEF</span>
+	</td>
+	<td class="text-right">
+		<span>150 kg</span>
+	</td>
+	<td class="text-right">
+		<span>127,30  EUR</span>
+	</td>
+	
+
+	<td id="id675">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:85:createOrder:createOrderButton" disabled="disabled" id="id676" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id539" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id53a" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id53f">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:86:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:59</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100503</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 89358 Kammeltal</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>107,72  EUR</span>
+	</td>
+	
+
+	<td id="id679">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:86:createOrder:createOrderButton" id="id53c" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id53d" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id53e" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id542">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:87:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:57</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100302</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>IRL  DUBLIN</span>
+	</td>
+	<td class="text-right">
+		<span>75 kg</span>
+	</td>
+	<td class="text-right">
+		<span>183,56  EUR</span>
+	</td>
+	
+
+	<td id="id67c">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:87:createOrder:createOrderButton" disabled="disabled" id="id67d" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id540" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id541" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id546">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:88:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:47</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span></span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 66350 Toulouges</span>
+	</td>
+	<td class="text-right">
+		<span>80 kg</span>
+	</td>
+	<td class="text-right">
+		<span>191,42  EUR</span>
+	</td>
+	
+
+	<td id="id680">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:88:createOrder:createOrderButton" id="id543" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id544" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id545" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id549">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:89:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:44</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100204</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 14552 Michendorf</span>
+	</td>
+	<td class="text-right">
+		<span>100 kg</span>
+	</td>
+	<td class="text-right">
+		<span>107,63  EUR</span>
+	</td>
+	
+
+	<td id="id683">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:89:createOrder:createOrderButton" disabled="disabled" id="id684" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id547" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id548" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id54c">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:90:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:42</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100203</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>D 77694 Kehl</span>
+	</td>
+	<td class="text-right">
+		<span>75 kg</span>
+	</td>
+	<td class="text-right">
+		<span>122,72  EUR</span>
+	</td>
+	
+
+	<td id="id687">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:90:createOrder:createOrderButton" disabled="disabled" id="id688" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id54a" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id54b" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id54f">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:91:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:40</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100202</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>F 44500 LA BAULE ESCOUBLAC</span>
+	</td>
+	<td class="text-right">
+		<span>75 kg</span>
+	</td>
+	<td class="text-right">
+		<span>166,61  EUR</span>
+	</td>
+	
+
+	<td id="id68b">
+		<input type="submit" class="centered disabled  createOrder " name="historyTable:table:specialTable:91:createOrder:createOrderButton" disabled="disabled" id="id68c" value="created" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id54d" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id54e" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr><tr id="id553">
+            <td width="25px">
+        <input type="checkbox" id="row1" name="historyTable:table:specialTable:92:pnlCheckbox:chkSelected" tabindex="1">
+    </td>
+
+
+            
+	<td class="datetime-row">
+		<span>10/14/2026</span>
+		<span class="time">10:38</span>
+	</td>
+	<td class="word-break ordernumber-row">
+		<span>MR26100102</span>
+	</td>
+	<td class="word-break">
+		<span>MISCELLANEOUS CUSTOMER<br>I 31014 Colle Umberto (TV)</span>
+	</td>
+	<td class="text-right">
+		<span>75 kg</span>
+	</td>
+	<td class="text-right">
+		<span>149,74  EUR</span>
+	</td>
+	
+
+	<td id="id68f">
+		<input type="submit" class="centered createOrder " name="historyTable:table:specialTable:92:createOrder:createOrderButton" id="id550" value="create" tabindex="1">
+	</td>
+
+
+            <td style="width:32px">
+        <div style="position:relative">
+
+            <div class="toolsMenu">
+                
+                <a class="displayNone view visible" id="id551" href="javascript:;" title="Display"></a>
+                
+                <a class="displayNone delete" id="id552" href="javascript:;" title="Delete"></a>
+                
+            </div>
+        </div>
+    </td>
+
+
+        </tr>
+    </tbody></table>
+</div>
+			<div id="id691">
+	
+	<div class="smart-select-container bottom-function-container" id="id692">
+		<img src="./eLogistics_files/function-arrow-bottom-ver-1785324668000.gif">
+		<select name="functionsBottom:container:functions" id="id3ef" tabindex="-1" style="opacity: 0; position: absolute; width: 0px;">
+<option selected="selected" value="">- Please select -</option>
+<option value="DELETE">Delete</option>
+<option value="DISPLAY">Display</option>
+<option value="PRINT">Print</option>
+</select><div class="fineSelect greyTheme id3ef" style="position: relative;"><div><input type="text" class="undefined fineSelect" search_active="true" autocomplete="off" search_favorite="false" wicketpath="undefined_div_input" selected_value="" selected_text="- Please select -" tabindex="1"></div><div class="imgWrapper"><img src="./eLogistics_files/combobox-ver-1785324664000.gif"></div><ul class="fineSelect optlist" style="width: 167.778px; display: none;"><li val="" wicketpath="undefined_div_li_0">- Please select -</li><li val="DELETE" wicketpath="undefined_div_li_1">Delete</li><li val="DISPLAY" wicketpath="undefined_div_li_2">Display</li><li val="PRINT" wicketpath="undefined_div_li_3">Print</li></ul></div>
+		<button class="basic-light-button" name="functionsBottom:container:execute" id="id55b">Execute</button>
+	</div>
+	<div id="id693">
+  
+</div>
+</div>
+		</form>
+	</div>
+	
+	<div id="id694"></div>
+	<div id="id695" style="display:none">
+	
+</div>
+</div>
+</div>
+		
+	
+			</servicearea_application_content> 
+		</article>
+	 
+	
+		</div>
+		</servicearea_content> 
+	</servicearea_main>	
+	<div class="overlay" id="idb1">	
+			<img class="overlay-image" src="./eLogistics_files/loading-indicator-ver-1785324664000.svg" onerror="this.src='./wicket/resource/com.dachser.uiservicemenu.resources.ImageResourceLoader/theme/icons/loading-indicator-ver-1785324664000.png'; this.onerror=null;">		
+		</div>	
+
+<div id="ui-datepicker-div" class="ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all"></div></body></html>
