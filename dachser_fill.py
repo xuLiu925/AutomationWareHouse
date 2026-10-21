@@ -7,6 +7,8 @@ Dachser freightquotation 询价表单自动填写（第一步：只填写，不�
     python dachser_fill.py 询价表.xlsx            # 填第 1 条数据（Excel 第 2 行）
     python dachser_fill.py 询价表.xlsx --row 3    # 填 Excel 第 3 行
     python dachser_fill.py 询价表.xlsx --dry      # 只解析 Excel，不打开浏览器
+    python dachser_fill.py 询价表.xlsx --all      # 批量：依次填写所有有编号的数据行
+    python dachser_fill.py 询价表.xlsx --all --dry   # 批量预览：只列出每行的解析结果，不开浏览器
 
 首次运行会打开一个独立的 Chrome 窗口：请手动登录 Dachser，
 进入 freightquotation -> Enquiry 页面后回到命令行按回车。
@@ -426,6 +428,12 @@ class Filler:
             cb.set_checked(want)
             self.wait_ajax()
 
+    def product(self, name):
+        """Transport information 里的 Product 下拉框（必填），统一选 targoflex。"""
+        sel = self.p.locator("select[name$='ctnOrderData:selProducts']")
+        sel.wait_for(state="attached", timeout=5000)
+        self.pick_by_text(sel, name)
+
     def show_full_view(self):
         """开始输入前，先点一下收货方地址区域的 displayFullView 链接（展开完整视图）。
         图标是 show 才点，已经展开就不再点，避免把它收回去。"""
@@ -477,6 +485,7 @@ def fill_form(page, d):
     steps = [
         ("Show full view", f.show_full_view),
         ("Order number", lambda: f.order_number(d["order_no"])),
+        ("Product", lambda: f.product("targoflex")),
         ("Country", lambda: f.country(d["country"])),
         ("PCD", lambda: f.zip(d["zip"])),
         ("City", lambda: f.city(d["city"])),
@@ -513,10 +522,227 @@ def fill_form(page, d):
     return results
 
 
+# ---------------------------------------------------------------- 批量模式
+def data_rows(path):
+    """Excel 里有"编号"的数据行 -> [(行号, 编号)]。从第 2 行开始，编号为空的行忽略。"""
+    wb = openpyxl.load_workbook(path, data_only=True)
+    ws = wb.worksheets[0]
+    headers = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
+    if "编号" not in headers:
+        raise SystemExit("Excel 第 1 行找不到“编号”列")
+    col = headers.index("编号") + 1
+    rows = []
+    for r in range(2, ws.max_row + 1):
+        v = ws.cell(row=r, column=col).value
+        if v is not None and str(v).strip():
+            rows.append((r, str(v).strip()))
+    return rows
+
+
+def parse_all(path):
+    """逐行解析 -> [{"row", "order_no", "data", "error"}]。
+    解析失败、或托盘方案算不出来的行，error 里记原因，批量填写时会跳过。"""
+    items = []
+    for r, order_no in data_rows(path):
+        it = {"row": r, "order_no": order_no, "data": None, "error": None}
+        try:
+            d = read_row(path, r)
+            it["data"] = d
+            if not d["pallet_lines"]:
+                it["error"] = "; ".join(d["pallet_notes"]) or "没有可用的托盘方案"
+        except (Exception, SystemExit) as e:
+            it["error"] = str(e) or repr(e)
+        items.append(it)
+    return items
+
+
+def _plan_text(d):
+    return " + ".join(f"{ln['qty']}托 {ln['L']}x{ln['W']}x{ln['H']}/{ln['weight']}kg"
+                      for ln in d["pallet_lines"])
+
+
+def print_batch_table(items):
+    print(f"\nExcel 共 {len(items)} 条数据：")
+    count = {}
+    for it in items:
+        count[it["order_no"]] = count.get(it["order_no"], 0) + 1
+    for it in items:
+        d = it["data"]
+        head = f"  第{it['row']:>3}行  {it['order_no']:<14}"
+        if it["error"]:
+            print(f"{head} 【跳过】{it['error']}")
+        else:
+            print(f"{head} {d['country']:<12} 数量 {d['_qty']:g}  {_plan_text(d)}"
+                  + ("   [电池/危险品]" if d["dangerous"] else ""))
+    dups = [k for k, v in count.items() if v > 1]
+    if dups:
+        print(f"\n注意: 编号重复: {', '.join(dups)}")
+
+
+def _launch(pw, args):
+    kw = dict(user_data_dir=str(Path(args.profile).resolve()), headless=False,
+              viewport=None, args=["--start-maximized"])
+    if args.chromium_path:
+        kw["executable_path"] = args.chromium_path
+    else:
+        kw["channel"] = "chrome"
+    return pw.chromium.launch_persistent_context(**kw)
+
+
+def _wait_blank_form(page, args):
+    """确认页面是一个空白的新询价表单（订单号框是空的），避免把上一条已填的内容覆盖掉。
+    返回 True=可以填；False=用户选择结束。"""
+    while True:
+        cur, why = None, ""
+        try:
+            page.wait_for_selector("input[name$='ordernumber']", timeout=15000)
+            cur = page.locator("input[name$='ordernumber']").input_value(timeout=3000).strip()
+        except Exception as e:
+            why = str(e).splitlines()[0]
+        if cur == "":
+            return True
+        if args.skip_login_wait:        # 测试模式：不弹提示
+            return False
+        if cur is None:
+            print(f"\n找不到订单号输入框（{why}），请确认当前是 freightquotation -> Enquiry 的新表单页面。")
+        else:
+            print(f"\n页面订单号框里已有内容 {cur!r}，看起来不是空白新表单。"
+                  "为避免覆盖上一条，请先打开新表单。")
+        if input("处理好后按回车重试（输入 q 结束）: ").strip().lower() == "q":
+            return False
+
+
+RESULT_WAIT_MS = 600000      # 等你点 Enquiry 提交的最长时间（毫秒），超时会问你怎么办
+
+
+def _read_result_info(page):
+    """从询价结果页读出询价号和总价，读不到就返回空字符串（只用于汇总，不影响流程）。"""
+    try:
+        v = page.evaluate("""() => {
+            const q = document.querySelector('.main-content h1 span.float-left');
+            const t = document.querySelector('td.border b span');
+            const h = [...document.querySelectorAll('th span')].map(e => e.innerText).find(s => /Amount in/i.test(s));
+            return {title: q ? q.innerText : '', total: t ? t.innerText.trim() : '', head: h || ''};
+        }""")
+        qn = re.search(r"query number:\s*(\d+)", v["title"], re.I)
+        cur = re.search(r"Amount in\s+(\w+)", v["head"], re.I)
+        parts = []
+        if qn:
+            parts.append(f"询价号 {qn.group(1)}")
+        if v["total"]:
+            parts.append(f"总价 {v['total']} {cur.group(1) if cur else ''}".strip())
+        return "，".join(parts)
+    except Exception:
+        return ""
+
+
+def _wait_result_page(page):
+    """等你点击 Enquiry 提交后出现的询价结果页（页面底部有 New enquiry 按钮）。
+    返回 ("submitted", 摘要) / ("skipped", None) / ("quit", None)。"""
+    print("等待你点击 Enquiry 提交……（Ctrl+C 可中止）")
+    while True:
+        try:
+            page.wait_for_selector("input[name='newSearch']", timeout=RESULT_WAIT_MS)
+            return "submitted", _read_result_info(page)
+        except Exception:
+            ans = input("一直没有检测到询价结果页。回车=继续等待，s=这条不提交、直接换下一条，"
+                        "q=结束: ").strip().lower()
+            if ans == "q":
+                return "quit", None
+            if ans == "s":
+                return "skipped", None
+
+
+def _goto_quotation(page):
+    """点左侧菜单里的 freightquotation（蓝色的 quotation），回到空白的询价表单。"""
+    link = page.locator("a.application-name-link", has=page.locator(
+        "span.blue-application-name", has_text=re.compile(r"^\s*quotation\s*$", re.I))).first
+    try:
+        link.click(timeout=8000)
+    except Exception:
+        try:
+            link.evaluate("e => e.click()")
+        except Exception as e:
+            print(f"  [WARN] 自动点击 quotation 失败：{str(e).splitlines()[0]}。请手动打开新的询价表单。")
+            return
+    try:    # 等到出现订单号框为空的新表单（旧表单还在时订单号非空，所以不会误判）
+        page.wait_for_function(
+            "() => { const i = document.querySelector(\"input[name$='ordernumber']\");"
+            " return !!i && i.value.trim() === ''; }", timeout=20000)
+    except Exception:
+        print("  [WARN] 点击 quotation 后没有等到空白表单，请检查页面。")
+
+
+def main_batch(args):
+    items = parse_all(args.xlsx)
+    if not items:
+        raise SystemExit("Excel 里没有找到带编号的数据行")
+    print_batch_table(items)
+    todo = [it for it in items if not it["error"]]
+    print(f"\n将填写 {len(todo)} 条，跳过 {len(items) - len(todo)} 条（跳过的请手动处理）。")
+    if not todo or args.dry:
+        return
+    if not args.yes and input("回车=确认并开始，输入 n 退出: ").strip().lower() == "n":
+        return
+
+    status = {}      # 行号 -> 结果说明
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as pw:
+        ctx = _launch(pw, args)
+        page = ctx.pages[0] if ctx.pages else ctx.new_page()
+        if args.url:
+            page.goto(args.url)
+        if not args.skip_login_wait:
+            input("\n请在浏览器里登录并打开 freightquotation -> Enquiry 页面，"
+                  "看到 New enquiry 表单后按回车继续...")
+        for n, it in enumerate(todo, 1):
+            d = it["data"]
+            print(f"\n===== [{n}/{len(todo)}] Excel 第 {it['row']} 行  编号 {d['order_no']} =====")
+            print(f"托盘方案: {_plan_text(d)}")
+            for note in d["pallet_notes"]:
+                print(f"  * {note}")
+            if not _wait_blank_form(page, args):
+                break
+            results = fill_form(page, d)
+            failed = [f"{name}: {msg}" for name, ok, msg in results if not ok]
+            base = ("已填写，全部 [OK]" if not failed
+                    else "已填写，但有失败项: " + " | ".join(failed))
+            status[it["row"]] = base
+            if args.skip_login_wait:
+                continue
+            print("\n请在浏览器里检查，确认无误后点击页面底部的 Enquiry 提交。"
+                  "提交后脚本会自动点击 quotation 回到空白表单，继续下一条。")
+            outcome, info = _wait_result_page(page)
+            if outcome == "quit":
+                break
+            if outcome == "submitted":
+                status[it["row"]] = base + " | 已提交" + (f"：{info}" if info else "")
+                print(f"  已检测到询价结果页{('：' + info) if info else ''}")
+            else:
+                status[it["row"]] = base + " | 未提交（已跳过）"
+            if n < len(todo):
+                _goto_quotation(page)
+            else:
+                input("\n全部处理完毕，按回车关闭浏览器...")
+        ctx.close()
+
+    print("\n===== 汇总 =====")
+    for it in items:
+        if it["error"]:
+            text = f"跳过: {it['error']}"
+        else:
+            text = status.get(it["row"], "未处理")
+        print(f"  第{it['row']:>3}行  {it['order_no']:<14} {text}")
+    print("\n提示: “已填写”只表示脚本已把内容填进表单，是否已提交以你在页面上的操作为准。")
+
+
 # ---------------------------------------------------------------- 主程序
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("xlsx")
+    ap.add_argument("--all", action="store_true",
+                    help="批量模式：依次填写 Excel 里所有有编号的数据行"
+                         "（每条填完等你点 Enquiry 提交，提交后自动点 quotation 回到空白表单继续下一条）")
     ap.add_argument("--row", type=int, default=2, help="Excel 行号（默认 2，即第一条数据）")
     ap.add_argument("--url", default=START_URL)
     ap.add_argument("--yes", action="store_true", help="跳过托盘方案确认")
@@ -525,6 +751,8 @@ def main():
     ap.add_argument("--chromium-path", default=None, help="指定浏览器可执行文件（测试用）")
     ap.add_argument("--skip-login-wait", action="store_true", help="测试用")
     args = ap.parse_args()
+    if args.all:
+        return main_batch(args)
 
     d = read_row(args.xlsx, args.row)
     print("解析结果:")
