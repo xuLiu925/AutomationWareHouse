@@ -1,5 +1,15 @@
 {
   "_说明": "每个产品一条，本地参数为准。尺寸单位 cm，重量单位 kg。packaging 是 Dachser 包装类型下拉框里显示的文字。full_pallet_* 是整托盘的标准高度和重量，填了就优先用；零散托盘按 层数×单箱高+15cm、箱数×单箱重+25kg 计算。值为 null 的必填字段没填时程序会报错。以 _ 开头的键会被忽略。",
+  "_defaults": {
+    "_说明": "查不到产品型号时的兜底托盘参数，也是所有产品统一的重量上限基准。改这里即可全局生效。",
+    "pallet_length_cm": 120,
+    "pallet_width_cm": 80,
+    "pallet_total_height_cm": 220,
+    "max_pallet_weight_kg": 1500,
+    "pallet_height_cm": 15,
+    "pallet_weight_kg": 25,
+    "packaging": "Disposable Pallet"
+  },
   "US2000": {
     "aliases": ["11US2000ZZD-20001"],
     "packaging": "Disposable Pallet",
@@ -11,9 +21,25 @@
     "pallet_width_cm": 80,
     "per_layer": 4,
     "small_per_layer": 2,
-    "layers_by_qty": {},
+    "layers_by_qty": {"4": 2},
     "max_layers": 11,
     "full_pallet_height_cm": 220,
     "full_pallet_weight_kg": 1025
+  },
+  "US3000": {
+    "aliases": ["11US3000ZZA-00011"],
+    "packaging": "Disposable Pallet",
+    "carton_length_cm": 57.5,
+    "carton_width_cm": 52.5,
+    "carton_height_cm": 22.5,
+    "carton_weight_kg": 32,
+    "pallet_length_cm": 120,
+    "pallet_width_cm": 80,
+    "per_layer": 4,
+    "small_per_layer": 2,
+    "layers_by_qty": {"4": 2},
+    "max_layers": 8,
+    "full_pallet_height_cm": 220,
+    "full_pallet_weight_kg": 1050
   }
 }
