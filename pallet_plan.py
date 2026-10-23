@@ -19,9 +19,9 @@
 import json
 import math
 import re
-from pathlib import Path
+from app_ui import APP_DIR
 
-PARAMS_FILE = Path(__file__).with_name("pallet_params.json")
+PARAMS_FILE = APP_DIR / "pallet_params.json"     # 放在程序外面，打包成 exe 后也能直接改
 
 # 硬编码兜底值——_defaults 里没有对应键时才用这里
 _HARDCODED_DEFAULTS = {

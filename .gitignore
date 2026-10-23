@@ -6,3 +6,6 @@ dachser_profile/
 *.xlsx
 *.csv
 .env
+build/
+dist/
+license.json
