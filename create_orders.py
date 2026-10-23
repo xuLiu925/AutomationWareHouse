@@ -176,6 +176,49 @@ def find_rows(page, keys, days):
     return search(page, "", days)
 
 
+F_EDIT_SAVE = "form[action*='frmOrderDetail'] input[name='btnSave']"
+
+
+def on_edit_page(page):
+    """是否还停在建单编辑页（Process order）。停在这里时 Dachser 会锁住这张单。"""
+    try:
+        return page.locator(F_EDIT_SAVE).count() > 0
+    except Exception:
+        return False
+
+
+def cancel_edit(page):
+    """点编辑页的 Cancel 正常离开，Dachser 才会解除锁定。返回是否已离开编辑页。"""
+    link = page.locator("form[action*='frmOrderDetail'] a.fw_formButtonLeft",
+                        has_text=re.compile(r"^\s*Cancel\s*$")).first
+    accept = lambda d: d.accept()      # 万一弹出"确定放弃吗"之类的确认框，选确定（Playwright 默认会点取消）
+    page.on("dialog", accept)
+    try:
+        link.click(timeout=10000)
+        page.wait_for_function("(s) => !document.querySelector(s)", arg=F_EDIT_SAVE, timeout=20000)
+        wait_ajax(page, 500)
+        return True
+    except Exception as e:
+        print(f"  [WARN] 自动点 Cancel 失败: {str(e).splitlines()[0]}")
+        return False
+    finally:
+        page.remove_listener("dialog", accept)
+
+
+def leave_edit_page(page, lx_no):
+    """离开建单页前确认：没 Save 就让用户选择去保存还是放弃（放弃时点 Cancel 解锁）。返回 True=已离开。"""
+    while on_edit_page(page):
+        ans = ask(f"{lx_no}：页面还停在建单编辑页，看起来还没点 Save。\n"
+                  "直接离开或关闭浏览器会让 Dachser 锁住这张单（之后手动打开会提示 being processed by someone else）。",
+                  [("c", "我去点 Save，点完再点这里"), ("x", "不保存，放弃这单（点 Cancel）")])
+        if ans == "x":
+            if cancel_edit(page):
+                print(f"  {lx_no}：已点 Cancel 放弃，锁定已解除")
+                return True
+            ask("自动点 Cancel 没成功，请在浏览器里手动点页面左下角的 Cancel。", [("c", "我点好了")])
+    return True
+
+
 def click_create(page, row):
     btn = page.locator(f"input[name='{row['btn_name']}']")
     btn.scroll_into_view_if_needed(timeout=5000)
@@ -196,7 +239,6 @@ F_STREET = "input[name$='tabpanel:tfiStreetConsignee']"
 F_COUNTRY = "select[name$='selCountriesConsignee']"
 F_ZIP = "input[name$='zipContainer:tfiZipConsignee']"
 F_CITY = "input[name$='tabpanel:tfiCityConsignee']"
-F_COUNTY = "input[name$='tabpanel:tfiSupplementConsignee']"
 F_PHONE_BOOKING = "input[name$='selDeliveryOptions'][value='AT']"
 
 
@@ -366,18 +408,21 @@ def fill_order(page, lx, dg_dir=DG_DIR):
         page.locator("#editAddr .tablinks a", has_text="Consignee").first.click(timeout=5000)
         wait_ajax(page)
 
-    # 1) 先选 Phone delivery booking，Contact person 等字段才会激活
+    # 1) 先选 Phone delivery booking，Contact person 等字段才会出现
+    #    （联系人表格上的 inactive 样式选完后也可能一直在，只影响外观，所以不看它；真填不进去 set_field 会提醒）
     try:
         page.locator(F_PHONE_BOOKING).first.click(timeout=5000)
         wait_ajax(page, 500)
-        page.wait_for_function(
-            "(s) => { const e = document.querySelector(s);"
-            " return !!e && !e.disabled && !e.closest('table.inactive') && e.offsetParent !== null; }",
-            arg=F_CONTACT, timeout=10000)
     except Exception as e:
-        warns.append(f"选 Phone delivery booking 后 Contact person 没有激活: {str(e).splitlines()[0]}")
+        warns.append(f"选 Phone delivery booking 失败: {str(e).splitlines()[0]}")
+    try:
+        page.wait_for_function(
+            "(s) => { const e = document.querySelector(s); return !!e && !e.disabled && e.offsetParent !== null; }",
+            arg=F_CONTACT, timeout=10000)
+    except Exception:
+        pass
 
-    # 2) 收货地址全部以领星为准（先国家，国家变化会刷新邮编/城市区域）
+    # 2) 收货地址以领星为准（先国家，国家变化会刷新邮编/城市区域）；County 不动，保持页面原值
     country = None
     try:
         country = norm_country(lx["country"])
@@ -396,7 +441,7 @@ def fill_order(page, lx, dg_dir=DG_DIR):
         street_text = f"{street_text}, {lx['addr2']}"
     for sel, val, label in [(F_STREET, street_text, "Street"),
                             (F_ZIP, zip_n, "PCD"),
-                            (F_CITY, lx["city"], "City"), (F_COUNTY, lx["province"], "County")]:
+                            (F_CITY, lx["city"], "City")]:
         if not val:
             warns.append(f"领星没有 {label}，已清空")
         set_field(page, sel, val, label, warns)
@@ -540,11 +585,13 @@ def run_live(lx_rows, args):
             res.append((lx, status, cands, note, action))
             if action.startswith("已"):
                 tips = "\n".join(f"  ⚠ {w}" for w in fw)
-                ans = ask(f"{lx['no']} 已填写完成。\n请在浏览器里检查，确认无误后点 Save。"
+                ans = ask(f"{lx['no']} 已填写完成。\n请在浏览器里检查，确认无误后点 Save，再点下面的按钮。"
                           + (f"\n\n注意：\n{tips}" if tips else ""),
-                          [("c", "继续下一单" if n < len(lx_rows) else "完成"), ("q", "结束")])
+                          [("c", "已保存，继续下一单" if n < len(lx_rows) else "已保存，完成"), ("q", "结束")])
+                leave_edit_page(page, lx["no"])      # 没 Save 就离开会锁单
                 if ans == "q":
                     break
+        leave_edit_page(page, "当前这单")            # 关浏览器前再确认一次
         if not args.yes:
             ask("处理完毕。", [("c", "关闭浏览器")])
         ctx.close()
