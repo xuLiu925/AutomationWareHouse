@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""打包成发给同事的"刘旭脚本"文件夹和 zip（用 Nuitka 编译，同事那边不需要 Python）。
+"""打包成发给同事的"XL FreightPilot"文件夹和 zip（用 Nuitka 编译，同事那边不需要 Python）。
 
 用法（只在你自己的电脑上）:
     pip install nuitka
     python build.py
 
 结果:
-    dist/刘旭脚本/       整个文件夹就是发给同事的程序
-    dist/刘旭脚本.zip    同一份内容的压缩包
+    dist/XL FreightPilot/       整个文件夹就是发给同事的程序
+    dist/XL FreightPilot.zip    同一份内容的压缩包
 注意: 不会把你的登录信息（dachser_profile）打包进去。
 
 为什么要用 D:\\liuxu_build:
@@ -24,7 +24,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-NAME = "刘旭脚本"
+NAME = "XL FreightPilot"
 STAGE = Path(os.environ.get("LIUXU_BUILD_DIR") or (r"D:\liuxu_build" if Path("D:/").exists() else r"C:\liuxu_build"))
 DIST = ROOT / "dist" / NAME
 EXE_TMP = "LiuXuScript.exe"     # 编译时用英文名，打包完再改名

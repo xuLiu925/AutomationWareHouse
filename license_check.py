@@ -19,14 +19,14 @@ CONTACT = "xuliu00925@gmail.com"
 DISABLED_MESSAGE = f"该软件已由开发者关闭使用，如需使用请联系开发者：{CONTACT}"
 OFFLINE_MESSAGE = (f"无法连接授权服务器，暂时不能使用。\n请检查网络（需要能访问 GitHub）后重试。\n"
                    f"如一直无法使用，请联系开发者：{CONTACT}")
-NOTICE = f"本软件由刘旭开发并授权使用，开发者可随时关闭使用。联系方式：{CONTACT}"
+NOTICE = f"XL FreightPilot · Developed by Xu Liu（刘旭）· {CONTACT}"
 
 
 def check(timeout=10):
     """返回 (能否使用, 不能使用时的提示)。"""
     url = f"{LICENSE_URL}?t={int(time.time())}"      # 加时间戳，尽量绕开缓存
     try:
-        req = urllib.request.Request(url, headers={"Cache-Control": "no-cache", "User-Agent": "liuxu-script"})
+        req = urllib.request.Request(url, headers={"Cache-Control": "no-cache", "User-Agent": "xl-freightpilot"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read().decode("utf-8"))
     except Exception:

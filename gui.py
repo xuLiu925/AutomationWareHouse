@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""刘旭脚本 —— Dachser 询价 / 建单的窗口界面。
+"""XL FreightPilot —— Dachser 询价 / 建单的窗口界面（作者：Xu Liu / 刘旭）。
 
 浏览器自动化在后台线程里跑（不卡窗口）；脚本里所有 print 显示到"运行记录"，
 所有 ask() 变成弹窗。打包成 exe 的入口就是这个文件。
@@ -20,7 +20,8 @@ import app_ui  # noqa: E402
 import license_check  # noqa: E402
 from app_ui import APP_DIR  # noqa: E402
 
-APP_NAME = "刘旭脚本"
+APP_NAME = "XL FreightPilot"
+APP_TITLE = f"{APP_NAME} — Freight Quotation & Order Automation"
 HELP_FILE = APP_DIR / "使用说明.txt"
 
 
@@ -69,7 +70,7 @@ class App:
         self.root = root
         self.q = queue.Queue()
         self.worker = None
-        root.title(APP_NAME)
+        root.title(APP_TITLE)
         root.geometry("820x640")
         root.minsize(640, 480)
 
@@ -131,6 +132,9 @@ class App:
         app_ui.set_ask_handler(self._ask_from_worker)
         sys.stdout = sys.stderr = QueueWriter(self.q)
         root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.pending_dlg = None
+        root.bind("<Button-1>", self._raise_pending, add="+")
+        root.bind("<FocusIn>", self._raise_pending, add="+")
         root.after(100, self._poll)
 
     # ------------------------------------------------------------ 界面
@@ -159,20 +163,54 @@ class App:
             messagebox.showinfo(APP_NAME, f"找不到 {HELP_FILE.name}")
 
     def _poll(self):
+        """每 100ms 取一次后台线程发来的日志/弹窗。任何一步出错都不能让这个循环停掉，否则界面会卡死。"""
         try:
             while True:
-                kind, *rest = self.q.get_nowait()
-                if kind == "log":
-                    self.log.insert("end", rest[0])
-                    self.log.see("end")
-                elif kind == "ask":
-                    self._show_ask(*rest)
-                elif kind == "done":
-                    self.start_btn.configure(state="normal")
-                    self.stop_btn.configure(state="disabled")
-        except queue.Empty:
-            pass
-        self.root.after(100, self._poll)
+                try:
+                    kind, *rest = self.q.get_nowait()
+                except queue.Empty:
+                    break
+                try:
+                    if kind == "log":
+                        self.log.insert("end", rest[0])
+                        self.log.see("end")
+                    elif kind == "ask":
+                        try:
+                            self._show_ask(*rest)
+                        except Exception:
+                            self._fallback_ask(*rest)
+                    elif kind == "done":
+                        self.start_btn.configure(state="normal")
+                        self.stop_btn.configure(state="disabled")
+                except Exception:
+                    self.log.insert("end", f"\n[界面出错] {traceback.format_exc()}\n")
+        finally:
+            self.root.after(100, self._poll)
+
+    def _fallback_ask(self, msg, options, ev, box):
+        """自定义弹窗显示失败时，用系统自带的提示框兜底（保证一定能回答，后台不会一直等）。"""
+        keys = [k for k, _ in options]
+        try:
+            if len(options) == 1:
+                messagebox.showinfo(APP_NAME, msg)
+                box["key"] = keys[0]
+            else:
+                ok = messagebox.askyesno(APP_NAME, f"{msg}\n\n是 = {options[0][1]}\n否 = {options[1][1]}")
+                box["key"] = keys[0] if ok else keys[1]
+        except Exception:
+            box["key"] = keys[0]
+        ev.set()
+
+    def _raise_pending(self, _event=None):
+        """点主窗口时，把还没回答的弹窗拉回最前面（防止它被别的窗口挡住找不到）。"""
+        dlg = getattr(self, "pending_dlg", None)
+        if dlg is not None:
+            try:
+                if dlg.winfo_exists():
+                    dlg.deiconify()
+                    dlg.lift()               # 只拉到前面，不抢焦点，主窗口里照样能滚动看记录
+            except tk.TclError:
+                pass
 
     # ------------------------------------------------------------ 弹窗（替代命令行的"按回车"）
     def _ask_from_worker(self, msg, options):
@@ -186,8 +224,8 @@ class App:
         target = _foreground_rect()          # 先记下当前在前面的窗口（多半是浏览器），弹窗放在它正中间
         dlg = tk.Toplevel(self.root)
         dlg.withdraw()                       # 摆好位置再显示，避免先在角落闪一下
-        dlg.title(APP_NAME)
-        dlg.transient(self.root)
+        dlg.title(f"{APP_NAME} - 请确认")
+        # 不设 transient：主窗口最小化或被挡住时弹窗不会跟着藏起来，任务栏上也有它自己的图标
         dlg.resizable(False, False)
         ttk.Label(dlg, text=msg, padding=16, wraplength=560, justify="left").pack()
         bar = ttk.Frame(dlg, padding=(16, 0, 16, 16))
@@ -195,8 +233,11 @@ class App:
 
         def choose(k):
             box["key"] = k
-            dlg.destroy()
-            ev.set()
+            self.pending_dlg = None
+            try:
+                dlg.destroy()
+            finally:
+                ev.set()
 
         for i, (k, label) in enumerate(options):
             b = ttk.Button(bar, text=label, command=lambda k=k: choose(k))
@@ -224,11 +265,12 @@ class App:
             x = min(max(x, vx), vx + vw - ow)
             y = min(max(y, vy), vy + vh - oh)
         dlg.geometry(f"+{x}+{y}")
+        self.pending_dlg = dlg
         dlg.deiconify()
         dlg.attributes("-topmost", True)    # 浏览器在前台时也能看到
         dlg.lift()
         dlg.focus_force()
-        dlg.grab_set()
+        # 不用 grab_set（模态）：弹窗一旦被挡住，主窗口会怎么点都没反应
 
     # ------------------------------------------------------------ 运行
     def _start(self):
@@ -295,7 +337,7 @@ class App:
 
 
 def selftest():
-    """打包后检查：能否找到 Chrome、启动浏览器（不登录）。用法: 刘旭脚本.exe --selftest"""
+    """打包后检查：能否找到 Chrome、启动浏览器（不登录）。用法: "XL FreightPilot.exe" --selftest"""
     out = APP_DIR / "selftest.txt"
     try:
         from playwright.sync_api import sync_playwright
