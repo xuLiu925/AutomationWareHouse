@@ -24,6 +24,33 @@ APP_NAME = "刘旭脚本"
 HELP_FILE = APP_DIR / "使用说明.txt"
 
 
+def _foreground_rect():
+    """Windows 当前最前面窗口的 (x, y, 宽, 高)；取不到（或已最小化）返回 None。"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        hwnd = u.GetForegroundWindow()
+        r = wintypes.RECT()
+        if hwnd and u.GetWindowRect(hwnd, ctypes.byref(r)):
+            w, h = r.right - r.left, r.bottom - r.top
+            if w > 200 and h > 150 and r.left > -10000:      # 最小化的窗口坐标是 -32000
+                return r.left, r.top, w, h
+    except Exception:
+        pass
+    return None
+
+
+def _virtual_screen():
+    """所有显示器拼起来的范围 (x, y, 宽, 高)，用来防止弹窗跑到屏幕外。"""
+    try:
+        import ctypes
+        m = ctypes.windll.user32.GetSystemMetrics
+        return m(76), m(77), m(78), m(79)      # SM_XVIRTUALSCREEN / Y / CX / CY
+    except Exception:
+        return None
+
+
 class QueueWriter:
     """把 print 的内容转给窗口（后台线程不能直接操作 tkinter）。"""
     def __init__(self, q):
@@ -156,7 +183,9 @@ class App:
         return box["key"]
 
     def _show_ask(self, msg, options, ev, box):
+        target = _foreground_rect()          # 先记下当前在前面的窗口（多半是浏览器），弹窗放在它正中间
         dlg = tk.Toplevel(self.root)
+        dlg.withdraw()                       # 摆好位置再显示，避免先在角落闪一下
         dlg.title(APP_NAME)
         dlg.transient(self.root)
         dlg.resizable(False, False)
@@ -179,10 +208,26 @@ class App:
         keys = [k for k, _ in options]
         dlg.protocol("WM_DELETE_WINDOW", lambda: choose(next((k for k in ("q", "n") if k in keys), keys[0])))
         dlg.update_idletasks()
-        x = self.root.winfo_rootx() + (self.root.winfo_width() - dlg.winfo_width()) // 2
-        y = self.root.winfo_rooty() + (self.root.winfo_height() - dlg.winfo_height()) // 3
-        dlg.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        dw, dh = dlg.winfo_reqwidth(), dlg.winfo_reqheight()
+        if target is None:
+            target = (self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height())
+        tx, ty, tw, th = target
+        # 边框宽、标题栏高：弹窗还没显示量不到，用一直显示着的主窗口量（样式一样）
+        fx, fy = self.root.winfo_rootx() - self.root.winfo_x(), self.root.winfo_rooty() - self.root.winfo_y()
+        if not (0 <= fx < 50 and 0 <= fy < 80):
+            fx, fy = 8, 31
+        ow, oh = dw + 2 * fx, dh + fy + fx                    # 整个弹窗（含标题栏）的大小
+        x, y = tx + (tw - ow) // 2, ty + (th - oh) // 2
+        vs = _virtual_screen()
+        if vs:
+            vx, vy, vw, vh = vs
+            x = min(max(x, vx), vx + vw - ow)
+            y = min(max(y, vy), vy + vh - oh)
+        dlg.geometry(f"+{x}+{y}")
+        dlg.deiconify()
         dlg.attributes("-topmost", True)    # 浏览器在前台时也能看到
+        dlg.lift()
+        dlg.focus_force()
         dlg.grab_set()
 
     # ------------------------------------------------------------ 运行
@@ -241,7 +286,9 @@ class App:
 
     def _on_close(self):
         if self.worker and self.worker.is_alive():
-            if not messagebox.askyesno(APP_NAME, "还在运行，确定要退出吗？浏览器也会一起关闭。"):
+            if not messagebox.askyesno(APP_NAME, "还在运行，确定要退出吗？浏览器也会一起关闭。\n\n"
+                                       "如果浏览器里还有没点 Save 的建单页，请先在浏览器里点 Save 或 Cancel，"
+                                       "否则这张单会被 Dachser 锁住一段时间。"):
                 return
         self.root.destroy()
         os._exit(0)     # 后台线程可能还在等浏览器，直接结束整个程序

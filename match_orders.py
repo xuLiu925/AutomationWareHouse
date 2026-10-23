@@ -30,7 +30,12 @@ def read_lingxing(path):
     it = ws.iter_rows(values_only=True)
     head = [str(h or "").strip() for h in next(it)]
     def col(prefix):
-        return next(i for i, h in enumerate(head) if h.startswith(prefix))
+        i = next((i for i, h in enumerate(head) if h.startswith(prefix)), None)
+        if i is None:
+            if "编号" in head:
+                raise SystemExit("这是询价表，不是领星导出的出库单。请把功能改成\"询价\"再开始。")
+            raise SystemExit(f"Excel 第 1 行找不到\"{prefix}\"列，看起来不是领星导出的出库单。")
+        return i
     c = dict(no=col("Outbound Order No"), rm=col("Remark"), rcp=col("Recipient/"), co=col("Company"),
              ctry=col("Country/Region"), city=col("City"), zip=col("Post code"), a1=col("Address1"),
              tel=col("Telephone"), email=col("Email/"), hno=col("House No"), a2=col("Address2"),

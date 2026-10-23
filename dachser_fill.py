@@ -146,7 +146,10 @@ def detect_order_groups(path):
     id_col = next((i + 1 for i, h in enumerate(headers) if h == "编号"), None)
     fare_col = next((i + 1 for i, h in enumerate(headers) if h == "运费报价(欧元)"), None)
     if id_col is None:
-        raise SystemExit('Excel 第 1 行找不到“编号”列')
+        if any(h.startswith(("Outbound Order No", "Remark")) for h in headers):
+            raise SystemExit("这是领星导出的出库单，不是询价表。请把功能改成\"建单\"再开始。")
+        shown = "、".join(h for h in headers if h)[:300] or "（第 1 行是空的）"
+        raise SystemExit(f"Excel 第 1 行找不到\"编号\"列，看起来不是询价表。\n第 1 行读到的是：{shown}")
 
     data_rows_set = set()
     for r in range(2, ws.max_row + 1):

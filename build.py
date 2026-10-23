@@ -70,7 +70,11 @@ def compile_exe(py):
 
 def assemble(built):
     if DIST.exists():
-        shutil.rmtree(DIST)
+        try:
+            shutil.rmtree(DIST)
+        except PermissionError:
+            raise SystemExit(f"\n删除旧版本失败：{DIST} 里的文件正在使用。\n"
+                             f"请先关闭正在运行的 {NAME}.exe（以及打开的这个文件夹里的文件），再重新运行 python build.py")
     shutil.copytree(built, DIST)
     (DIST / EXE_TMP).rename(DIST / f"{NAME}.exe")
     for f in EXTRA_FILES:
