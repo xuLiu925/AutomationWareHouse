@@ -42,6 +42,26 @@ python match_orders.py lingxing.xlsx list.html
 python match_orders.py lingxing.xlsx live   # live fetch via Playwright
 ```
 
+### Create orders: `create_orders.py`
+
+Reads Lingxing export, searches each `Remark/备注` MR number in Dachser "My enquiries", clicks `create`:
+```powershell
+python create_orders.py lingxing.xlsx                       # live: search + click create
+python create_orders.py lingxing.xlsx --dry                 # live search, no click
+python create_orders.py lingxing.xlsx --html eLogistics.html  # offline match preview
+```
+Rules: match = Dachser order number contains all MR numbers from the remark; `created` rows ignored. Single match → auto-click (address mismatch only warned); multiple matches → user clicks manually. After create, `fill_order()` fills the Transport Order page: selects Phone delivery booking first (activates contact fields); consignee Street/Country/PCD/City/County overwritten from Lingxing; Name1=company (or recipient), Name2=email, Name3/Telephone/Mobile=phone (spaces stripped), Contact person=recipient, Order number += `+出库单号` (if over maxlength 35, original number is cut from the front, 出库单号 kept whole), Content=`battery` on lines with qty; for each such line `add_dg_line()` clicks the DG icon → Add dangerous goods → checks UN 3480 → Add → mass = line weight, No. of packages = Lingxing `Total Qty of SKU`, packaging = Fibreboard box → Save → Back (skips if UN3480 already listed); finally uploads dangerous goods documents via the "Dangerous goods documents" button — files in `危险品文件/` (or `--dg-dir`) whose name without extension equals a Lingxing `SKU n\nSKU` value exactly; missing files are skipped with a warning. Does **not** click Save; pauses for the user. Writes `建单结果.csv`.
+
+### GUI + packaging for colleagues ("刘旭脚本")
+```powershell
+python gui.py        # tkinter window: 询价 (dachser_fill.main_batch) / 建单 (create_orders.run)
+python build.py      # Nuitka standalone build -> dist/刘旭脚本/ + dist/刘旭脚本.zip, runs `刘旭脚本.exe --selftest`
+```
+- `app_ui.py`: `APP_DIR` (script dir, or exe dir when compiled) — `pallet_params.json`, `危险品文件/`, `dachser_profile/` resolve against it; `ask(msg, options)` replaces every `input()` (CLI = input, GUI = modal dialog via `set_ask_handler`); stop flag checked at the start of each order.
+- Never call `input()` directly in the scripts — use `app_ui.ask()` so the GUI keeps working.
+- `create_orders` report defaults to `<Excel名>_建单结果.csv` next to the Excel.
+- The build never includes `dachser_profile/` (login data). Colleagues need only Chrome installed.
+
 ### Pallet calculator standalone:
 ```powershell
 python pallet_plan.py US2000 44
@@ -65,7 +85,8 @@ python pallet_plan.py US2000 44
 ### Browser session persistence
 - `dachser_fill.py` saves login state to `dachser_profile/` (gitignored)
 - `fetch_dachser.py` saves login state to `browser_profile/` (gitignored)
-- First run opens a visible Chrome window; user logs in manually, then presses Enter
+- `dachser_fill.open_quotation()` (used by `dachser_fill.py` and `create_orders.py`): opens the site; if already logged in goes straight on; if the login form is autofilled by Chrome within ~6s it clicks Login; otherwise waits (polling, no Enter needed) until the user logs in; then clicks freightquotation
+- `_launch()` passes `chromium_sandbox=True` so Chrome doesn't show the `--no-sandbox` warning bar (falls back to no-sandbox if launch fails)
 
 ### Excel column contract (`dachser_fill.py`)
 Required columns in row 1 (header): `编号`, `国家`, `邮编`, `城市`, `地址`, `数量`, `Unit/单位`, `单个物料（长）`, `单个物料（宽）`, `单个物料（高）`, `单个物料（重量）`, `Dangerous Goods Type/危险品类型`, `产品物料`, `是否需要尾板`

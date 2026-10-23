@@ -32,14 +32,20 @@ def read_lingxing(path):
     def col(prefix):
         return next(i for i, h in enumerate(head) if h.startswith(prefix))
     c = dict(no=col("Outbound Order No"), rm=col("Remark"), rcp=col("Recipient/"), co=col("Company"),
-             ctry=col("Country/Region"), city=col("City"), zip=col("Post code"), a1=col("Address1"))
+             ctry=col("Country/Region"), city=col("City"), zip=col("Post code"), a1=col("Address1"),
+             tel=col("Telephone"), email=col("Email/"), hno=col("House No"), a2=col("Address2"),
+             prov=col("Province Name"), qty=col("Total Qty of SKU"))
+    sku_cols = [i for i, h in enumerate(head) if re.fullmatch(r"SKU\s*\d+\s+SKU", h)]   # "SKU 1\nSKU", "SKU 2\nSKU"...
     out = []
     for r in it:
         if not r[c["no"]]:
             continue
         g = lambda k: str(r[c[k]] if r[c[k]] is not None else "").strip()
         out.append(dict(no=g("no"), remark=g("rm"), recipient=g("rcp"), company=g("co"),
-                        country=g("ctry"), city=g("city"), zip=g("zip"), addr=g("a1")))
+                        country=g("ctry"), city=g("city"), zip=g("zip"), addr=g("a1"),
+                        tel=g("tel"), email=g("email"), hno=g("hno"), addr2=g("a2"), province=g("prov"),
+                        skus=[str(r[i]).strip() for i in sku_cols if r[i] not in (None, "")],
+                        total_qty=re.sub(r"\.0+$", "", g("qty"))))
     return out
 
 # ---------- Dachser 列表页 ----------

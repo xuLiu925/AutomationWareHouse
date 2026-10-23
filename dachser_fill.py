@@ -23,11 +23,14 @@ import argparse
 import math
 import re
 import sys
+import time
 from pathlib import Path
 
 import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import app_ui  # noqa: E402
+from app_ui import ask  # noqa: E402
 from pallet_plan import plan_pallets  # noqa: E402
 
 START_URL = "https://elogistics.dachser.com/"
@@ -723,13 +726,74 @@ def print_batch_table(items):
 
 
 def _launch(pw, args):
-    kw = dict(user_data_dir=str(Path(args.profile).resolve()), headless=False,
-              viewport=None, args=["--start-maximized"])
+    # chromium_sandbox=True：不让 Playwright 加 --no-sandbox，Chrome 顶部就不会出现"不受支持的命令行标记"提示
+    kw = dict(user_data_dir=str(app_ui.app_path(args.profile)), headless=False,
+              viewport=None, args=["--start-maximized"], chromium_sandbox=True)
     if args.chromium_path:
         kw["executable_path"] = args.chromium_path
     else:
         kw["channel"] = "chrome"
-    return pw.chromium.launch_persistent_context(**kw)
+    try:
+        return pw.chromium.launch_persistent_context(**kw)
+    except Exception as e:
+        print(f"  [WARN] 开启沙箱启动浏览器失败（{str(e).splitlines()[0]}），改用 --no-sandbox 启动")
+        kw["chromium_sandbox"] = False
+        return pw.chromium.launch_persistent_context(**kw)
+
+
+LOGIN_USER = "input[name='user:unit:textfield']"
+LOGIN_PASS = "input[name='password:password']"
+LOGIN_BTN = "form:has(input[name='password:password']) input[type='submit']"
+AUTOFILL_WINDOW_S = 6     # 登录页出现后这么多秒内检测到账号密码才自动点 Login（之后有值多半是你在手动输入）
+LOGIN_TIMEOUT_S = 600
+
+
+def _quotation_link(page):
+    return page.locator("a.application-name-link", has=page.locator(
+        "span.blue-application-name", has_text=re.compile(r"^\s*quotation\s*$", re.I))).first
+
+
+def _login_filled(page):
+    """账号、密码框都有值（包括 Chrome 自动填充：自动填充的密码在用户操作前 JS 读不到 value，要看 :-webkit-autofill）。"""
+    return page.evaluate("""([u, p]) => [u, p].every(s => {
+        const e = document.querySelector(s);
+        if (!e) return false;
+        try { if (e.matches(':-webkit-autofill')) return true; } catch (_) {}
+        return e.value.trim() !== '';
+    })""", [LOGIN_USER, LOGIN_PASS])
+
+
+def open_quotation(page, url):
+    """打开 Dachser -> 登录 -> 点左侧 freightquotation 进入询价页面。
+    已登录：直接进；登录页账号密码已自动填好：自动点 Login；否则等你在浏览器里登录。"""
+    page.goto(url)
+    login_seen = None        # 第一次看到登录页的时间
+    auto_clicked = told = False
+    deadline = time.time() + LOGIN_TIMEOUT_S
+    while True:
+        page.wait_for_timeout(500)
+        try:
+            if _quotation_link(page).count():
+                break
+            if page.locator(LOGIN_PASS).count():
+                login_seen = login_seen or time.time()
+                if (not auto_clicked and time.time() - login_seen < AUTOFILL_WINDOW_S
+                        and _login_filled(page)):
+                    auto_clicked = True
+                    print("检测到浏览器已保存的账号密码，自动点击 Login ...")
+                    page.locator(LOGIN_BTN).first.click(timeout=5000)
+                    page.wait_for_timeout(1500)
+                    continue
+                if not told:
+                    print("请在浏览器里输入账号、密码并点击 Login，登录成功后脚本会自动继续 ...")
+                    told = True
+        except Exception:
+            pass             # 页面跳转中，下一轮再看
+        if time.time() > deadline:
+            ask("一直没检测到登录成功。请在浏览器里登录 Dachser。", [("c", "继续等待")])
+            deadline = time.time() + LOGIN_TIMEOUT_S
+    print("已登录，进入 freightquotation ...")
+    _goto_quotation(page)
 
 
 def _wait_blank_form(page, args):
@@ -747,11 +811,11 @@ def _wait_blank_form(page, args):
         if args.skip_login_wait:        # 测试模式：不弹提示
             return False
         if cur is None:
-            print(f"\n找不到订单号输入框（{why}），请确认当前是 freightquotation -> Enquiry 的新表单页面。")
+            msg = f"找不到订单号输入框（{why}），请确认当前是 freightquotation -> Enquiry 的新表单页面。"
         else:
-            print(f"\n页面订单号框里已有内容 {cur!r}，看起来不是空白新表单。"
-                  "为避免覆盖上一条，请先打开新表单。")
-        if input("处理好后按回车重试（输入 q 结束）: ").strip().lower() == "q":
+            msg = f"页面订单号框里已有内容 {cur!r}，看起来不是空白新表单。为避免覆盖上一条，请先打开新表单。"
+        print("\n" + msg)
+        if ask(msg + "\n处理好后重试。", [("c", "重试"), ("q", "结束")]) == "q":
             return False
 
 
@@ -782,14 +846,14 @@ def _read_result_info(page):
 def _wait_result_page(page):
     """等你点击 Enquiry 提交后出现的询价结果页（页面底部有 New enquiry 按钮）。
     返回 ("submitted", 摘要) / ("skipped", None) / ("quit", None)。"""
-    print("等待你点击 Enquiry 提交……（Ctrl+C 可中止）")
+    print("等待你点击 Enquiry 提交……")
     while True:
         try:
             page.wait_for_selector("input[name='newSearch']", timeout=RESULT_WAIT_MS)
             return "submitted", _read_result_info(page)
         except Exception:
-            ans = input("一直没有检测到询价结果页。回车=继续等待，s=这条不提交、直接换下一条，"
-                        "q=结束: ").strip().lower()
+            ans = ask("一直没有检测到询价结果页。",
+                      [("c", "继续等待"), ("s", "这条不提交，换下一条"), ("q", "结束")])
             if ans == "q":
                 return "quit", None
             if ans == "s":
@@ -798,8 +862,7 @@ def _wait_result_page(page):
 
 def _goto_quotation(page):
     """点左侧菜单里的 freightquotation（蓝色的 quotation），回到空白的询价表单。"""
-    link = page.locator("a.application-name-link", has=page.locator(
-        "span.blue-application-name", has_text=re.compile(r"^\s*quotation\s*$", re.I))).first
+    link = _quotation_link(page)
     try:
         link.click(timeout=8000)
     except Exception:
@@ -839,7 +902,8 @@ def main_batch(args):
     print(f"\n将填写 {len(todo)} 个订单，跳过 {len(items) - len(todo)} 个（跳过的请手动处理）。")
     if not todo or args.dry:
         return
-    if not args.yes and input("回车=确认并开始，输入 n 退出: ").strip().lower() == "n":
+    if not args.yes and ask(f"将填写 {len(todo)} 个订单，跳过 {len(items) - len(todo)} 个。"
+                            "托盘方案见运行记录，确认开始？", [("c", "开始"), ("n", "退出")]) == "n":
         return
 
     status = {}      # rows[0] -> 结果说明
@@ -847,12 +911,15 @@ def main_batch(args):
     with sync_playwright() as pw:
         ctx = _launch(pw, args)
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        if args.url:
-            page.goto(args.url)
-        if not args.skip_login_wait:
-            input("\n请在浏览器里登录并打开 freightquotation -> Enquiry 页面，"
-                  "看到 New enquiry 表单后按回车继续...")
+        if args.skip_login_wait:
+            if args.url:
+                page.goto(args.url)
+        else:
+            open_quotation(page, args.url)
         for n, it in enumerate(todo, 1):
+            if app_ui.stop_requested():
+                print("\n已停止。")
+                break
             d = it["data"]
             rows_label = _rows_label(it["rows"])
             print(f"\n===== [{n}/{len(todo)}] Excel {rows_label}  编号 {d['order_no']} =====")
@@ -883,7 +950,7 @@ def main_batch(args):
             if n < len(todo):
                 _goto_quotation(page)
             else:
-                input("\n全部处理完毕，按回车关闭浏览器...")
+                ask("全部处理完毕。", [("c", "关闭浏览器")])
         ctx.close()
 
     print("\n===== 汇总 =====")
@@ -929,32 +996,26 @@ def main():
     for n in d["pallet_notes"]:
         print(f"  * {n}")
     if not args.dry and not args.yes:
-        if input("\n托盘方案是否确认？回车=确认并开始填写，输入 n 退出: ").strip().lower() == "n":
+        if ask("\n托盘方案是否确认？", [("c", "确认并开始填写"), ("n", "退出")]) == "n":
             return
     if args.dry:
         return
 
     from playwright.sync_api import sync_playwright
     with sync_playwright() as pw:
-        kw = dict(user_data_dir=str(Path(args.profile).resolve()), headless=False,
-                  viewport=None, args=["--start-maximized"])
-        if args.chromium_path:
-            kw["executable_path"] = args.chromium_path
-        else:
-            kw["channel"] = "chrome"
-        ctx = pw.chromium.launch_persistent_context(**kw)
+        ctx = _launch(pw, args)
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        if args.url:
-            page.goto(args.url)
-        if not args.skip_login_wait:
-            input("\n请在浏览器里登录并打开 freightquotation -> Enquiry 页面，"
-                  "看到 New enquiry 表单后按回车继续...")
+        if args.skip_login_wait:
+            if args.url:
+                page.goto(args.url)
+        else:
+            open_quotation(page, args.url)
         page.wait_for_selector("input[name$='ordernumber']", timeout=15000)
         print("\n开始填写:")
         fill_form(page, d)
         print("\n填写完成。请在浏览器里检查，确认无误后自行点击页面底部的 Enquiry。")
         if not args.skip_login_wait:
-            input("检查完毕后按回车关闭浏览器...")
+            ask("检查完毕后关闭浏览器。", [("c", "关闭浏览器")])
         ctx.close()
 
 
