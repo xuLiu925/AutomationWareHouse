@@ -52,13 +52,14 @@ python create_orders.py lingxing.xlsx --html eLogistics.html  # offline match pr
 ```
 Rules: match = Dachser order number contains all MR numbers from the remark; `created` rows ignored. Single match → auto-click (address mismatch only warned); multiple matches → user clicks manually. After create, `fill_order()` fills the Transport Order page: selects Phone delivery booking first (activates contact fields); consignee Street/Country/PCD/City overwritten from Lingxing (County left untouched; the contact table's `inactive` class may persist and is ignored); Name1=company (or recipient), Name2=email, Name3/Telephone/Mobile=phone (spaces stripped), Contact person=recipient, Order number += `+出库单号` (if over maxlength 35, original number is cut from the front, 出库单号 kept whole), Content=`battery` on lines with qty; for each such line `add_dg_line()` clicks the DG icon → Add dangerous goods → checks UN 3480 → Add → mass = line weight, No. of packages = Lingxing `Total Qty of SKU`, packaging = Fibreboard box → Save → Back (skips if UN3480 already listed); finally uploads dangerous goods documents via the "Dangerous goods documents" button — files in `危险品文件/` (or `--dg-dir`) whose name without extension equals a Lingxing `SKU n\nSKU` value exactly; missing files are skipped with a warning. Does **not** click Save; pauses for the user. Writes `建单结果.csv`.
 
-### GUI + packaging for colleagues ("刘旭脚本")
+### GUI + packaging for colleagues ("XL FreightPilot", author Xu Liu)
 ```powershell
 python gui.py        # tkinter window: 询价 (dachser_fill.main_batch) / 建单 (create_orders.run)
-python build.py      # Nuitka standalone build -> dist/刘旭脚本/ + dist/刘旭脚本.zip, runs `刘旭脚本.exe --selftest`
+python build.py      # Nuitka standalone build -> dist/XL FreightPilot/ + dist/XL FreightPilot.zip, runs `"XL FreightPilot.exe" --selftest`
 ```
 - `app_ui.py`: `APP_DIR` (script dir, or exe dir when compiled) — `pallet_params.json`, `危险品文件/`, `dachser_profile/` resolve against it; `ask(msg, options)` replaces every `input()` (CLI = input, GUI = modal dialog via `set_ask_handler`); stop flag checked at the start of each order.
 - Never call `input()` directly in the scripts — use `app_ui.ask()` so the GUI keeps working.
+- GUI dialogs: not modal (no `grab_set`) and not `transient`, topmost, centered on the foreground window; `_poll` must never stop (errors are logged, failed dialogs fall back to `messagebox`), otherwise the worker thread waits forever.
 - `create_orders` report defaults to `<Excel名>_建单结果.csv` next to the Excel.
 - The build never includes `dachser_profile/` (login data). Colleagues need only Chrome installed.
 
