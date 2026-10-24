@@ -11,3 +11,5 @@ build/
 dist/
 license.json
 危险品文件/
+xlfp_config.json
+worker/.wrangler/

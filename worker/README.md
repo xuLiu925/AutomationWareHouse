@@ -1,0 +1,54 @@
+# XL FreightPilot 服务端（Cloudflare Worker）
+
+`worker.js` 负责两件事：
+
+- **授权**：每个同事一个授权码，总开关和每个人的开关都在这里控制
+- **AI 整理中转**：Gemini Key 和提示词只放在这里，exe 里没有
+
+全部在 Cloudflare 网页后台操作，不用装任何工具。免费额度为每天 10 万次请求，用不完。
+
+## 一、部署（只做一次）
+
+1. 注册并登录 https://dash.cloudflare.com 。
+2. **建 KV**：左侧 Storage & Databases → KV → Create，名字填 `xlfp`。
+3. **建 Worker**：左侧 Compute (Workers) → Create → 选 "Hello World" 模板，名字填 `xlfp` → Deploy。
+   然后点 Edit code，把 `worker.js` 的全部内容粘贴进去，替换原来的代码，再点 Deploy。
+4. **绑定 KV**：在这个 Worker 的 Settings → Bindings → Add → KV namespace。
+   Variable name 填 **`XLFP`**（必须大写），namespace 选第 2 步建的 `xlfp`。
+5. **放 Gemini Key**：Settings → Variables and Secrets → Add。
+   Type 选 **Secret**，Name 填 `GEMINI_API_KEY`，Value 填 Google AI Studio 里的 Key。
+   （可选）再加一个 Text 类型的变量 `MODEL`，可以换模型，不加就用 `gemini-3.5-flash-lite`。
+6. **记下 Worker 地址**：类似 `https://xlfp.<你的子域名>.workers.dev`。
+   把它填进 `license_check.py` 的 `SERVER_URL`，然后重新打包（只需要这一次）。
+
+## 二、给同事发授权码
+
+1. 生成一个随机授权码：
+   ```
+   python -c "import secrets; print(secrets.token_urlsafe(16))"
+   ```
+2. 在 KV `xlfp` 里点 Add entry：
+   - Key：`user:<授权码>`，例如 `user:Q3v9...`
+   - Value：`{"name": "张三", "enabled": true, "daily": 100}`
+     - `daily`：每天最多做几次 AI 整理（一张表算一次），写 0 或不写表示不限
+3. 把授权码发给同事。同事在软件里点"授权码"按钮填进去即可。
+
+给自己也建一个授权码。
+
+## 三、日常管理（改完 1 分钟内生效，不用重新打包）
+
+| 要做的事 | 怎么改 |
+|---|---|
+| 停用某个同事 | 把他那条的 `enabled` 改成 `false`，可加 `"message": "提示文字"` |
+| 停用所有人 | 加/改键 `config`，值为 `{"enabled": false, "message": "提示文字"}` |
+| 重新开放 | 改回 `true` |
+| 看谁今天用了多少次 | KV 里 `usage:<日期>:<授权码>` 这些键（2 天后自动删除） |
+| 换 Gemini Key | Settings → Variables and Secrets 里改 `GEMINI_API_KEY` |
+| 改提示词 | Edit code 改 `PROMPT`，再点 Deploy；同时把 `worker.js` 存回仓库 |
+
+## 四、费用和条款
+
+- 在欧盟把程序给同事使用，Gemini 必须用**付费服务**（Gemini API 条款："You may use only Paid Services when making API Clients available to users in the European Economic Area"）。
+  在 Google AI Studio 的项目里开通 Billing 即可，按用量计费。
+- 建议在 Google Cloud 的 Billing → Budgets 里设一个每月预算提醒（比如 5 欧元）。
+- Worker 发给 Gemini 的只有：编号、地址、邮编、城市、国家、尾板、收件人、公司。不包含电话和邮箱。

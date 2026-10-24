@@ -35,9 +35,10 @@ There is no test suite. Verify changes by: `--dry` / `--html eLogistics.html` ru
 ```
 gui.py            tkinter window; runs dachser_fill.main_batch / create_orders.run in a worker thread
 app_ui.py         APP_DIR, app_path(), ask(), stop flag — shared by CLI and GUI
-license_check.py  remote on/off switch, checked by gui.py before each run
+license_check.py  token (xlfp_config.json), check() via Worker before each GUI run, post() helper
 dachser_fill.py   Excel parsing, Filler (page wrapper), _launch(), open_quotation() login, quotation batch
-ai_clean.py       optional Gemini cleanup of messy quotation cells (no key → disabled)
+ai_clean.py       AI cleanup of messy quotation cells via the Worker (no token / error → rules)
+worker/           Cloudflare Worker (JS): auth + Gemini relay; holds key + prompt; not bundled
 pallet_plan.py    plan_pallets(): params from pallet_params.json -> up to 2 order lines + notes
 create_orders.py  search/match/create, fill_order(), add_dg_line(), upload_dg(), leave_edit_page()
 match_orders.py   read_lingxing(), check_address(), COUNTRY map, MR regex
@@ -76,7 +77,7 @@ Matching (`classify`): keys = all MR numbers in the remark (or the whole remark 
   - `编号` may carry free text: `parse_order_no` takes the leading `[A-Za-z0-9-_/.]` run; unsure cases (no token, <3 or >35 chars, space+alnum or a symbol right after) are asked via `resolve_uncertain` before the batch starts (not in `--dry`).
   - Tail lift: `parse_tail_lift` → True/False/None (negation words first); None is asked before start. Remarks (编号 leftover + 备注 column, incl. rows under the 编号 merge) are only listed for manual handling, never filled.
   - Street: Dachser quotation has ONE street field → `clean_street` keeps original order (no house-number split; `split_street` is still used by create_orders). `street_warnings` flags leftover zip-like numbers / no house number.
-  - Optional AI (`ai_clean.py`, Gemini REST via urllib, key `GEMINI_API_KEY`, model `XLFP_AI_MODEL`, default `gemini-3.5-flash-lite`): `apply_ai` merges into the rule result — AI order no must be a substring of the cell, AI street must pass `street_ok`, conflicts become "ask before start". No key / any error → rules only. Only the needed fields are sent (no phone/email). User is in Germany: distributing to colleagues needs the paid Gemini tier + a relay holding the key; never put the key in the repo or exe.
+  - AI (`ai_clean.py` → Worker `POST /clean` → Gemini; every row is sent, by user's choice): `apply_ai` merges into the rule result — AI order no must be a substring of the cell, AI street must pass `street_ok`, conflicts become "ask before start". No token / any error → rules only. Only the needed fields are sent (no phone/email). Prompt, schema, model and Gemini key live only in `worker/worker.js` — never move them back into the exe or repo config. EEA distribution requires the paid Gemini tier.
 - 领星 (prefix match): `Outbound Order No`, `Remark`, `Recipient/`, `Company`, `Country/Region`, `City`, `Post code`, `House No`, `Address1`, `Address2`, `Province Name`, `Telephone`, `Email/`, `Total Qty of SKU`, `SKU n\nSKU`.
 - Wrong sheet type for the mode raises `SystemExit` with a hint to switch mode.
 
@@ -88,11 +89,11 @@ Per product: `packaging` (exact Dachser dropdown text), `carton_length_cm`, `car
 - Dialogs: not modal (no `grab_set`), not `transient`, topmost, centered on the current foreground window (`_foreground_rect`, outer frame measured from the root window); clicking the main window lifts a pending dialog.
 - Footer shows `license_check.NOTICE`; title `XL FreightPilot — Freight Quotation & Order Automation`.
 
-## License switch (`license_check.py`)
-Fetches `https://raw.githubusercontent.com/xuLiu925/liuxu-license/main/license.json` (`{"enabled": true, "message": ""}`) before each GUI run. Only `enabled is True` passes; network/format errors block use (user's choice). Disabled only stops automation — never delete or alter files. Keep the behavior disclosed (footer, `使用说明.txt`); don't add hidden mechanisms.
+## License + AI server (`license_check.py`, `worker/`)
+Cloudflare Worker (`worker/worker.js`, deploy/admin steps in `worker/README.md`), URL in `license_check.SERVER_URL` (override with env `XLFP_SERVER`). Each colleague has a token (GUI button "授权码" → `xlfp_config.json` in APP_DIR, gitignored). `POST /check` and `POST /clean` with `Authorization: Bearer <token>`. KV `XLFP`: `config` (global switch), `user:<token>` (`name`, `enabled`, `daily` limit, `message`), `usage:<date>:<token>`. Only `enabled is True` passes; no token / 401 / 403 / network errors block use (user's choice). Disabled only stops automation — never delete or alter files. Keep the behavior disclosed (footer, `使用说明.txt`); don't add hidden mechanisms. Test locally with a Node server wrapping `worker.js` (in-memory KV) in the scratchpad.
 
 ## Build (`build.py`)
 Nuitka `--standalone`, `--enable-plugin=tk-inter`, `--windows-console-mode=disable`, `--include-package=playwright` (the Nuitka playwright plugin bundles the driver; adding it manually conflicts). Nuitka's DLL tool breaks on non-ASCII paths: when the project root is ASCII (`D:\XLFreightPilot`) it compiles in place with the current Python into `build/` (`IN_PLACE`); otherwise sources are copied to `D:\liuxu_build` (`LIUXU_BUILD_DIR`) and built in a dedicated venv there. `NUITKA_CACHE_DIR` = `<stage>/cache` (compiler auto-downloaded, Zig). Output `dist/XL FreightPilot/` + zip, then runs `"XL FreightPilot.exe" --selftest`. Fails with a clear message if the old exe is still running. The user packages manually — don't run `build.py` unless asked.
 
 ## Git
-Remote `origin` = private `xuLiu925/AutomationWareHouse`, branch `main`. Commit/push only when asked; confirm the repo is still private before pushing. Never commit `危险品文件/`, `dachser_profile/`, `browser_profile/`, `*.xlsx`, `*.csv`, `license.json`, `build/`, `dist/`.
+Remote `origin` = private `xuLiu925/AutomationWareHouse`, branch `main`. Commit/push only when asked; confirm the repo is still private before pushing. Never commit `危险品文件/`, `dachser_profile/`, `browser_profile/`, `*.xlsx`, `*.csv`, `license.json`, `xlfp_config.json`, `build/`, `dist/`.
