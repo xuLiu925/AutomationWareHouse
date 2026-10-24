@@ -82,7 +82,7 @@ python build.py
 - 生成 `dist\XL FreightPilot\`（发给同事的文件夹）和 `dist\XL FreightPilot.zip`
 - 打包前请关闭正在运行的 `XL FreightPilot.exe`
 - 用 Nuitka 编译为原生程序，不包含 `.py` 源码，也**不包含你的登录信息**（`dachser_profile`）
-- 因为 Nuitka 不支持中文路径，`build.py` 会把源码复制到纯英文目录 `D:\liuxu_build`（可用环境变量 `LIUXU_BUILD_DIR` 修改）并在那里建专用虚拟环境编译；第一次约 10–20 分钟，之后几分钟
+- Nuitka 不支持中文路径：项目在纯英文路径（`D:\XLFreightPilot`）时直接用当前 Python 在 `build/` 里编译；否则把源码复制到 `D:\liuxu_build`（环境变量 `LIUXU_BUILD_DIR` 可改）并在那里建专用虚拟环境编译；第一次约 10–20 分钟，之后几分钟
 - 打包后自动运行 `--selftest` 检查 Chrome、托盘参数和授权；看到 `自检结果: OK ...` 即成功
 - 新增 `.py` 模块时，要把文件名加到 `build.py` 的 `SOURCES` 里
 - 只改了 `pallet_params.json` 不需要重新打包，直接替换同事文件夹里的那个文件

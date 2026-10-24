@@ -10,10 +10,11 @@
     dist/XL FreightPilot.zip    同一份内容的压缩包
 注意: 不会把你的登录信息（dachser_profile）打包进去。
 
-为什么要用 D:\\liuxu_build:
-    Nuitka 分析 DLL 依赖的工具不支持中文路径（用户名"刘旭"会变成乱码导致编译失败），
-    所以把源码复制到纯英文路径、在那里单独建一个打包用的虚拟环境来编译。
-    可以用环境变量 LIUXU_BUILD_DIR 换成别的纯英文路径。
+关于路径:
+    Nuitka 分析 DLL 依赖的工具不支持中文路径（用户名"刘旭"会变成乱码导致编译失败）。
+    项目在纯英文路径下（如 D:\\XLFreightPilot）时，直接用当前 Python 在项目的 build/ 里编译；
+    否则把源码复制到纯英文路径 D:\\liuxu_build（环境变量 LIUXU_BUILD_DIR 可改），
+    在那里单独建一个打包用的虚拟环境来编译。
 """
 import os
 import shutil
@@ -25,7 +26,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 NAME = "XL FreightPilot"
-STAGE = Path(os.environ.get("LIUXU_BUILD_DIR") or (r"D:\liuxu_build" if Path("D:/").exists() else r"C:\liuxu_build"))
+IN_PLACE = str(ROOT).isascii() and not os.environ.get("LIUXU_BUILD_DIR")
+STAGE = ROOT / "build" if IN_PLACE else Path(
+    os.environ.get("LIUXU_BUILD_DIR") or (r"D:\liuxu_build" if Path("D:/").exists() else r"C:\liuxu_build"))
 DIST = ROOT / "dist" / NAME
 EXE_TMP = "LiuXuScript.exe"     # 编译时用英文名，打包完再改名
 SOURCES = ["gui.py", "app_ui.py", "license_check.py", "dachser_fill.py", "create_orders.py", "match_orders.py",
@@ -35,7 +38,10 @@ PACKAGES = ["nuitka", f"playwright=={version('playwright')}", f"openpyxl=={versi
 
 
 def build_python():
-    """在纯英文路径下准备一个打包专用的虚拟环境，返回它的 python.exe。"""
+    """返回用来编译的 python.exe：项目在英文路径就用当前 Python，否则在英文路径下准备一个打包专用的虚拟环境。"""
+    if IN_PLACE:
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PACKAGES], check=True)
+        return Path(sys.executable)
     if not str(STAGE).isascii():
         raise SystemExit(f"打包目录必须是纯英文路径: {STAGE}")
     py = STAGE / "venv" / "Scripts" / "python.exe"
@@ -48,12 +54,15 @@ def build_python():
 
 
 def compile_exe(py):
-    src = STAGE / "src"
-    if src.exists():
-        shutil.rmtree(src)
-    src.mkdir(parents=True)
-    for f in SOURCES:
-        shutil.copy2(ROOT / f, src / f)
+    if IN_PLACE:
+        src = ROOT
+    else:
+        src = STAGE / "src"
+        if src.exists():
+            shutil.rmtree(src)
+        src.mkdir(parents=True)
+        for f in SOURCES:
+            shutil.copy2(ROOT / f, src / f)
     out = STAGE / "build"
     env = {**os.environ, "NUITKA_CACHE_DIR": str(STAGE / "cache")}   # 编译器等下载缓存也放英文路径
     cmd = [str(py), "-m", "nuitka",

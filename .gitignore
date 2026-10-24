@@ -6,6 +6,7 @@ dachser_profile/
 *.xlsx
 *.csv
 .env
+.venv/
 build/
 dist/
 license.json
