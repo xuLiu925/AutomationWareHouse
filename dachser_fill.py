@@ -14,6 +14,10 @@ Dachser freightquotation 询价表单自动填写（第一步：只填写，不�
     "运费报价(欧元)"列合并的行属于同一订单（地址相同），脚本合并处理后只填一张表单。
     未合并的行各自独立。
 
+编号格里混写的备注：取开头的字母数字当编号，其余当备注；认不准时会问。
+"备注"列和编号格里的备注脚本不处理，只列出来提示人工查看。
+"是否需要尾板"列（前缀匹配）：先看否定词（不/无/否/no…），再看肯定词；空或认不出时会问。
+
 首次运行会打开一个独立的 Chrome 窗口：请手动登录 Dachser，
 进入 freightquotation -> Enquiry 页面后回到命令行按回车。
 登录状态保存在 ./dachser_profile 目录里，下次不用重新登录。
@@ -29,6 +33,7 @@ from pathlib import Path
 import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ai_clean  # noqa: E402
 import app_ui  # noqa: E402
 from app_ui import ask  # noqa: E402
 from pallet_plan import plan_pallets  # noqa: E402
@@ -132,6 +137,108 @@ def split_street(address, zip_raw, city):
     return a, ""
 
 
+_STREET_WORD = (r"(stra(ß|ss)e|str\.|weg|gasse|platz|allee|ring|damm|ufer|steig|straat|laan|dreef|"
+                r"plein|rue|avenue|chemin|via|calle|road|street)")
+_ALL_COUNTRY_NAMES = sorted({a for al in _COUNTRIES.values() for a in al if len(a) > 3}
+                            | {n.lower() for n in _COUNTRIES}, key=len, reverse=True)
+
+
+def clean_street(address, zip_raw, city, names=()):
+    """询价单 Street 栏只填街道 + 门牌号（一个格子，保留原顺序）。
+    去掉地址里的括号备注、国家、邮编、城市、z.H./c/o 前缀、开头的收件人/公司名（names）。
+    返回 (street, 括号备注列表)。"""
+    s = str(address or "").translate(str.maketrans("，、；（）：", ",,;():"))
+    notes = [n.strip() for n in re.findall(r"\(([^)]*)\)", s) if n.strip()]
+    s = re.sub(r"\([^)]*\)", " ", s)
+    for n in _ALL_COUNTRY_NAMES:          # 国家名在末尾，粘在城市后面也去掉（'RiedstadtGermany'）
+        s = re.sub(r"[,\s]*" + re.escape(n) + r"\s*$", "", s, flags=re.I)
+    z = str(zip_raw if zip_raw is not None else "").strip()
+    if isinstance(zip_raw, float) and zip_raw.is_integer():
+        z = str(int(zip_raw))
+    if z:
+        s = re.sub(r"(?:\b[A-Za-z]{1,2}\s*-\s*)?" + re.escape(z) + r"\b", " ", s)
+    if city:
+        s = re.sub(r"[,\s]*" + re.escape(str(city).strip()) + r"\s*$", "", s.strip(" ,;"), flags=re.I)
+    if re.match(r"^\s*(z\.?\s*h(d|änden)?\.?|c/o|attn\.?:?)\s+", s, re.I):
+        w = re.search(r"[^\s,]*" + _STREET_WORD, s, re.I)
+        if w:
+            s = s[w.start():]
+    for n in names:
+        n = re.sub(r"\s+", " ", str(n or "")).strip()
+        if len(n) >= 3:
+            s = re.sub(r"^\s*" + re.escape(n) + r"[\s,]+(?=\S)", "", s, flags=re.I)
+    return re.sub(r"\s+", " ", s).strip(" ,;"), notes
+
+
+def street_warnings(street):
+    out = []
+    if not re.search(r"\d", street):
+        out.append(f"⚠ Street {street!r} 没有门牌号，请核对")
+    m = re.search(r"(?<![\w.-])\d{4,6}(?![\w.-])", street)
+    if m:
+        out.append(f"⚠ Street {street!r} 里还有像邮编的数字 {m.group(0)}，可能和邮编列不一致")
+    return out
+
+
+def street_ok(street, address, zip_raw):
+    """AI 给的街道必须每个词都出自原地址，且不含邮编（防止 AI 编造或漏删）。"""
+    if not street:
+        return False
+    raw = str(address or "").lower()
+    z = re.sub(r"\D", "", str(zip_raw or ""))
+    if z and len(z) >= 4 and z in re.sub(r"\D", " ", street).split():
+        return False
+    return all(t.lower() in raw for t in re.findall(r"\w+", street))
+
+
+# ---------------------------------------------------------------- 编号 / 尾板 识别
+ORDER_NO_MAX = 35      # Dachser Order number 输入框的最大长度
+
+
+def parse_order_no(raw):
+    """客户常把备注写进编号格：'MR26101527，客户收货时间…'。
+    取开头连续的字母/数字/-_/. 作为编号，其余当备注。
+    返回 (编号, 备注, 是否有把握)；没把握时由调用方问用户。"""
+    if isinstance(raw, float) and raw.is_integer():
+        raw = int(raw)
+    s = str(raw if raw is not None else "").strip()
+    m = re.match(r"[A-Za-z0-9][A-Za-z0-9\-_/.]*", s)
+    if not m:
+        return "", s, False                     # 开头就是中文/符号
+    no = m.group(0).rstrip("-_/.")
+    rest = s[m.end():]
+    remark = rest.strip(" \t\r\n,，;；:：、")
+    sure = 3 <= len(no) <= ORDER_NO_MAX
+    # 只隔一个空格就接着字母数字（'AB 123'）：可能是编号的一部分，也可能是备注
+    if re.match(r"[ \t]+[A-Za-z0-9]", rest):
+        sure = False
+    # 紧跟着 # * 之类的符号（'PO#4711'）：分不清
+    if rest and not re.match(r"[\s,，;；:：、(（一-鿿]", rest):
+        sure = False
+    return no, remark, sure
+
+
+_TAIL_NO = re.compile(r"不|无|否|没|\bno\b|\bnein\b|\bnicht\b|\bkein|\bfalse\b|^n$", re.I)
+_TAIL_YES = re.compile(r"需要|要|是|有|尾板|\byes\b|\bja\b|\btrue\b|^y$|tail|hebeb", re.I)
+
+
+def parse_tail_lift(raw):
+    """是否需要尾板 -> True / False / None（空或认不出，交给用户选）。先判否定词。"""
+    s = str(raw if raw is not None else "").strip()
+    if not s:
+        return None
+    if _TAIL_NO.search(s):
+        return False
+    if _TAIL_YES.search(s):
+        return True
+    return None
+
+
+def _col(headers, prefix):
+    """按前缀找列名（客户可能写成 '是否需要尾板车辆' 之类）。"""
+    return next((h for h in headers if h.startswith(prefix)), None)
+
+
 # ---------------------------------------------------------------- 订单分组检测
 def detect_order_groups(path):
     """
@@ -198,18 +305,43 @@ def read_order_group(path, row_nums):
     country = norm_country(first.get("国家"))
     zip_ = norm_zip(first.get("邮编"), country)
     city = str(first.get("城市") or "").strip()
-    street, number = split_street(first.get("地址"), first.get("邮编"), city)
-    tail_lift = str(first.get("是否需要尾板") or "").strip() in ("是", "yes", "Yes", "Y", "y")
+    street, addr_notes = clean_street(first.get("地址"), first.get("邮编"), city,
+                                      (first.get("收件人"), first.get("公司名称")))
+    tail_col = _col(headers, "是否需要尾板")
+    tail_raw = first.get(tail_col) if tail_col else None
+    tail_lift = parse_tail_lift(tail_raw)
+
+    # 编号格里的备注 + "备注"列（可能拆在合并区域的下面几行）都收集起来，提示人工处理
+    remarks: list[str] = []
+    note_col = _col(headers, "备注")
+    note_rows = set(row_nums)
+    id_idx = headers.index("编号") + 1
+    for rn in row_nums:
+        for mr in ws.merged_cells.ranges:
+            if mr.min_col <= id_idx <= mr.max_col and mr.min_row == rn:
+                note_rows.update(range(mr.min_row, mr.max_row + 1))
 
     pallet_lines: list[dict] = []
     pallet_notes: list[str] = []
     is_dangerous = False
     all_order_nos: list[str] = []
+    order_no_raw = ""
+    order_no_sure = True
+    id_remark = ""
     total_qty = 0.0
 
     for rn in row_nums:
         d = rowdict(rn)
-        ono = str(d.get("编号") or "").strip()
+        raw_no = d.get("编号")
+        ono, extra, sure = parse_order_no(raw_no)
+        if not order_no_raw:
+            order_no_raw = str(raw_no or "").strip()
+            order_no_sure = sure
+        if extra:
+            remarks.append(extra)
+            if rn == row_nums[0]:
+                id_remark = extra
+        ono = ono or str(raw_no or "").strip()
         if ono:
             all_order_nos.append(ono)
 
@@ -264,19 +396,41 @@ def read_order_group(path, row_nums):
                 pallet_notes.append(
                     f"⚠ {ono}/{material}: 托盘估算失败（{e}），且缺少尺寸数据，请完全人工处理")
 
+    for rn in sorted(note_rows):
+        v = rowdict(rn).get(note_col) if note_col else None
+        if v is not None and str(v).strip():
+            remarks.append(str(v).strip())
+    remarks += [f"地址括号里: {n}" for n in addr_notes]
+    # 去重：被另一条更长备注包含的就不再单独列（备注列常把编号格里的内容拆开再写一遍）
+    flat = [re.sub(r"\s+", " ", r) for r in remarks]
+    remarks = [r for i, r in enumerate(remarks)
+               if not any(j != i and flat[i] in flat[j] and (len(flat[j]) > len(flat[i]) or j < i)
+                          for j in range(len(flat)))]
+
     return {
         "pallet_lines": pallet_lines,
         "pallet_notes": pallet_notes,
         "order_no": all_order_nos[0] if all_order_nos else "",
+        "order_no_raw": order_no_raw,
+        "order_no_sure": order_no_sure,
+        "remarks": remarks,
+        "_id_remark": id_remark,
         "all_order_nos": all_order_nos,
         "country": country,
         "zip": zip_,
         "city": city,
         "street": street,
-        "number": number,
+        "number": "",                      # 询价单 Street 栏只有一个格子，门牌号已在 street 里
+        "street_src": "规则",
+        "clean_notes": [],
+        "_ai_input": {"row": row_nums[0], "编号": first.get("编号"), "地址": first.get("地址"),
+                      "邮编": first.get("邮编"), "城市": city, "国家": first.get("国家"),
+                      "是否需要尾板": tail_raw, "收件人": first.get("收件人"),
+                      "公司名称": first.get("公司名称")},
         "goods_value": "5000" if total_qty <= 4 else "10000",
         "dangerous": is_dangerous,
         "tail_lift": tail_lift,
+        "tail_raw": "" if tail_raw is None else str(tail_raw).strip(),
         "_raw_address": first.get("地址"),
         "_qty": total_qty,
         "_row_nums": row_nums,
@@ -649,7 +803,7 @@ def fill_form(page, d):
         ("Packing type check", f.verify_packing),
         ("Collection date untouched", f.check_date_untouched),
         ("Tail lift delivery",
-         lambda: f.check("input[name$='specialContainer:cbAutoLift']", d["tail_lift"])),
+         lambda: f.check("input[name$='specialContainer:cbAutoLift']", bool(d["tail_lift"]))),
         ("Phone delivery booking", f.phone_booking),
     ]
     results = []
@@ -692,6 +846,119 @@ def parse_all(path):
     return items
 
 
+def apply_ai(datas):
+    """用 AI 整理结果补充/修正规则识别（编号、尾板、街道），结果写回每个 d。
+    规则有把握且与 AI 一致 -> 照用；规则没把握 -> 用 AI（需通过校验）；两者冲突 -> 标为待确认。
+    返回说明文字（打印用）。"""
+    datas = [d for d in datas if d]
+    if not datas:
+        return ""
+    if not ai_clean.available():
+        return "AI 整理：未配置 GEMINI_API_KEY，使用规则识别"
+    res = ai_clean.clean_rows([d["_ai_input"] for d in datas])
+    if res is None:
+        return "AI 整理：调用失败，本次使用规则识别"
+    for d in datas:
+        inp = d["_ai_input"]
+        a = res.get(inp["row"])
+        if not a:
+            d["clean_notes"].append("AI 没有返回这一单的结果，使用规则识别")
+            continue
+        # 编号：必须原样出自编号格
+        raw_no = d["order_no_raw"]
+        ai_no = (a.get("order_no") or "").strip()
+        if ai_no and ai_no in raw_no:
+            if not d["order_no_sure"]:
+                d["order_no"], d["order_no_sure"] = ai_no, True
+                d["clean_notes"].append(f"编号由 AI 识别: {ai_no}")
+                # 编号格剩下的备注也改用 AI 拆出来的
+                if d["_id_remark"] in d["remarks"]:
+                    d["remarks"].remove(d["_id_remark"])
+                ai_remark = (a.get("remark") or "").strip()
+                if ai_remark and ai_remark not in d["remarks"]:
+                    d["remarks"].insert(0, ai_remark)
+            elif ai_no != d["order_no"]:
+                d["order_no_alt"] = ai_no
+                d["order_no_sure"] = False
+                d["clean_notes"].append(f"编号: 规则识别为 {d['order_no']}，AI 识别为 {ai_no}，开始前确认")
+        # 尾板
+        ai_tail = {"yes": True, "no": False}.get(a.get("tail_lift"))
+        if d["tail_lift"] is None and ai_tail is not None:
+            d["tail_lift"] = ai_tail
+            d["clean_notes"].append(f"尾板由 AI 判断: {'需要' if ai_tail else '不需要'}（原文 {d['tail_raw']!r}）")
+        elif d["tail_lift"] is not None and ai_tail is not None and ai_tail != d["tail_lift"]:
+            d["tail_lift"] = None
+            d["clean_notes"].append("尾板: 规则和 AI 判断不一致，开始前确认")
+        # 街道：AI 结果要通过校验才用
+        ai_street = re.sub(r"\s+", " ", (a.get("street") or "")).strip(" ,;")
+        if street_ok(ai_street, inp["地址"], inp["邮编"]):
+            if ai_street != d["street"]:
+                d["clean_notes"].append(f"Street 用 AI 结果 {ai_street!r}（规则结果 {d['street']!r}）")
+            d["street"], d["street_src"] = ai_street, "AI"
+        elif ai_street:
+            d["clean_notes"].append(f"⚠ AI 给的 Street {ai_street!r} 不像出自原地址，已改用规则结果")
+        if (a.get("issues") or "").strip():
+            d["clean_notes"].append("⚠ AI 提示: " + a["issues"].strip())
+    return f"AI 整理：已启用（{ai_clean.model_name()}）"
+
+
+def print_streets(items):
+    """Street 和原地址不同的（被整理过的）列出来，方便核对。"""
+    rows = [it for it in items if it["data"] and it["data"]["street"] != str(it["data"]["_raw_address"] or "").strip()]
+    if rows:
+        print("\n🏠 以下地址已整理成 Street（请核对）：")
+        for it in rows:
+            d = it["data"]
+            print(f"  {_rows_label(it['rows'])} {d['street']!r:34} ← 原文 {d['_raw_address']!r}  [{d['street_src']}]")
+    notes = [(it, n) for it in items if it["data"]
+             for n in it["data"]["clean_notes"] + street_warnings(it["data"]["street"])
+             if not n.startswith("Street 用 AI")]
+    if notes:
+        print("\n🔎 整理说明（编号 / 尾板 / 地址）：")
+        for it, n in notes:
+            print(f"  {_rows_label(it['rows'])} {n}")
+
+
+def resolve_uncertain(d, label):
+    """编号没把握、尾板认不出时问用户，结果写回 d。返回 False = 用户选择跳过这单。"""
+    if not d["order_no_sure"]:
+        raw = d["order_no_raw"]
+        alt = d.get("order_no_alt")
+        opts = ([("c", f"用 {d['order_no']}")] if d["order_no"] and d["order_no"] != raw else []) + (
+            [("a", f"用 AI 识别的 {alt}")] if alt and alt != d["order_no"] else []) + [
+            ("f", f"用整格原文（超过 {ORDER_NO_MAX} 字会被截断）"), ("s", "跳过这单，手动处理")]
+        ans = ask(f"{label} 的编号认不准：\n{raw}\n\n脚本识别为：{d['order_no'] or '（无）'}", opts)
+        if ans == "s":
+            return False
+        if ans == "f":
+            d["order_no"] = raw
+        elif ans == "a":
+            d["order_no"] = alt
+        d["order_no_sure"] = True
+    if d["tail_lift"] is None:
+        ans = ask(f"{label}（编号 {d['order_no']}）的\"是否需要尾板\""
+                  f"{'是空的' if not d['tail_raw'] else '写的是：' + d['tail_raw']}，需要尾板吗？",
+                  [("y", "需要尾板"), ("n", "不需要尾板")])
+        d["tail_lift"] = ans == "y"
+    return True
+
+
+def _tail_text(d):
+    return {True: "要尾板", False: "不要尾板", None: "尾板?"}[d["tail_lift"]]
+
+
+def print_remarks(items):
+    """编号格里的备注和"备注"列内容：脚本不处理，列出来提示人工处理。"""
+    rows = [it for it in items if it["data"] and it["data"]["remarks"]]
+    if not rows:
+        return
+    print("\n📝 以下订单有备注（收货时间、后备联系人等），脚本不处理，请人工查看：")
+    for it in rows:
+        print(f"  {_rows_label(it['rows'])} {it['order_no']}:")
+        for r in it["data"]["remarks"]:
+            print("      " + r.replace("\n", " / "))
+
+
 def _plan_text(d):
     lines = d["pallet_lines"]
     if not lines:
@@ -717,8 +984,10 @@ def print_batch_table(items):
         else:
             d = it["data"]
             warn = "  ⚠有警告" if any("⚠" in n for n in d["pallet_notes"]) else ""
-            print(f"{head} {d['country']:<12} 总数量 {d['_qty']:g}  {len(d['pallet_lines'])} 行订单"
-                  + ("  [电池/危险品]" if d["dangerous"] else "") + warn)
+            if not d["order_no_sure"]:
+                warn += "  ⚠编号待确认"
+            print(f"{head} {d['country']:<12} 总数量 {d['_qty']:g}  {len(d['pallet_lines'])} 行订单  "
+                  f"{_tail_text(d)}" + ("  [电池/危险品]" if d["dangerous"] else "") + warn)
     dups = {}
     for it in items:
         if it["order_no"]:
@@ -886,6 +1155,10 @@ def main_batch(args):
     items = parse_all(args.xlsx)
     if not items:
         raise SystemExit("Excel 里没有找到带编号的数据行")
+    print("\n" + apply_ai([it["data"] for it in items]))
+    for it in items:
+        if it["data"]:
+            it["order_no"] = it["data"]["order_no"]
     print_batch_table(items)
 
     # 打印所有警告备注
@@ -900,10 +1173,22 @@ def main_batch(args):
                 label = _rows_label(it["rows"])
                 for w in warns:
                     print(f"  {label}: {w}")
+    print_streets(items)
+    print_remarks(items)
 
     todo = [it for it in items if not it["error"]]
+    unsure = [it for it in todo if not it["data"]["order_no_sure"] or it["data"]["tail_lift"] is None]
+    if unsure:
+        print(f"\n有 {len(unsure)} 个订单的编号或尾板需要确认（⚠编号待确认 / 尾板?），开始前会逐个询问。")
     print(f"\n将填写 {len(todo)} 个订单，跳过 {len(items) - len(todo)} 个（跳过的请手动处理）。")
     if not todo or args.dry:
+        return
+    for it in unsure:
+        if not resolve_uncertain(it["data"], _rows_label(it["rows"])):
+            it["error"] = "用户选择跳过（编号认不准）"
+        it["order_no"] = it["data"]["order_no"]
+    todo = [it for it in todo if not it["error"]]
+    if not todo:
         return
     if not args.yes and ask(f"将填写 {len(todo)} 个订单，跳过 {len(items) - len(todo)} 个。"
                             "托盘方案见运行记录，确认开始？", [("c", "开始"), ("n", "退出")]) == "n":
@@ -931,6 +1216,8 @@ def main_batch(args):
             print(f"  托盘方案: {_plan_text(d)}  ({len(d['pallet_lines'])} 行)")
             for note in d["pallet_notes"]:
                 print(f"  * {note}")
+            for r in d["remarks"]:
+                print(f"  📝 备注（请人工处理）: {r.replace(chr(10), ' / ')}")
             if not _wait_blank_form(page, args):
                 break
             results = fill_form(page, d)
@@ -986,6 +1273,9 @@ def main():
         return main_batch(args)
 
     d = read_row(args.xlsx, args.row)
+    print(apply_ai([d]))
+    for n in d["clean_notes"] + street_warnings(d["street"]):
+        print(f"  🔎 {n}")
     print("解析结果:")
     for k, v in d.items():
         if not k.startswith("_"):
@@ -998,6 +1288,12 @@ def main():
               f"{ln['weight']}kg / {ln['L']}×{ln['W']}×{ln['H']}")
     for n in d["pallet_notes"]:
         print(f"  * {n}")
+    for r in d["remarks"]:
+        print(f"  📝 备注（请人工处理）: {r.replace(chr(10), ' / ')}")
+    if not d["order_no_sure"]:
+        print(f"  ⚠ 编号认不准，原文: {d['order_no_raw']!r}")
+    if not args.dry and not resolve_uncertain(d, f"第 {d['_row_nums'][0]} 行"):
+        return
     if not args.dry and not args.yes:
         if ask("\n托盘方案是否确认？", [("c", "确认并开始填写"), ("n", "退出")]) == "n":
             return

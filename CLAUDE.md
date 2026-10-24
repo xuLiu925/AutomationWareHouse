@@ -37,6 +37,7 @@ gui.py            tkinter window; runs dachser_fill.main_batch / create_orders.r
 app_ui.py         APP_DIR, app_path(), ask(), stop flag — shared by CLI and GUI
 license_check.py  remote on/off switch, checked by gui.py before each run
 dachser_fill.py   Excel parsing, Filler (page wrapper), _launch(), open_quotation() login, quotation batch
+ai_clean.py       optional Gemini cleanup of messy quotation cells (no key → disabled)
 pallet_plan.py    plan_pallets(): params from pallet_params.json -> up to 2 order lines + notes
 create_orders.py  search/match/create, fill_order(), add_dg_line(), upload_dg(), leave_edit_page()
 match_orders.py   read_lingxing(), check_address(), COUNTRY map, MR regex
@@ -70,7 +71,12 @@ Street (Address1 minus trailing city/zip, + house no / Address2), Country (`norm
 Matching (`classify`): keys = all MR numbers in the remark (or the whole remark if none); a Dachser order matches if it contains every key (`MR\d{8}` not followed by a digit); `created`/buttonless rows excluded. 0 → not found / already created; 1 → auto create; >1 → user chooses.
 
 ### Excel contracts
-- 询价 row-1 headers: `编号`, `国家`, `邮编`, `城市`, `地址`, `数量`, `Unit/单位`, `单个物料（长/宽/高/重量）`, `Dangerous Goods Type/危险品类型`, `产品物料`, `是否需要尾板`; optional `运费报价(欧元)` — merged cells group rows into one order.
+- 询价 row-1 headers: `编号`, `国家`, `邮编`, `城市`, `地址`, `数量`, `Unit/单位`, `单个物料（长/宽/高/重量）`, `Dangerous Goods Type/危险品类型`, `产品物料`, `是否需要尾板` (prefix match); optional `运费报价(欧元)` — merged cells group rows into one order; optional `备注…`.
+  - Rule given to colleagues: each piece of info in ONE cell (merge or in-cell newlines), no continuation rows.
+  - `编号` may carry free text: `parse_order_no` takes the leading `[A-Za-z0-9-_/.]` run; unsure cases (no token, <3 or >35 chars, space+alnum or a symbol right after) are asked via `resolve_uncertain` before the batch starts (not in `--dry`).
+  - Tail lift: `parse_tail_lift` → True/False/None (negation words first); None is asked before start. Remarks (编号 leftover + 备注 column, incl. rows under the 编号 merge) are only listed for manual handling, never filled.
+  - Street: Dachser quotation has ONE street field → `clean_street` keeps original order (no house-number split; `split_street` is still used by create_orders). `street_warnings` flags leftover zip-like numbers / no house number.
+  - Optional AI (`ai_clean.py`, Gemini REST via urllib, key `GEMINI_API_KEY`, model `XLFP_AI_MODEL`, default `gemini-3.5-flash-lite`): `apply_ai` merges into the rule result — AI order no must be a substring of the cell, AI street must pass `street_ok`, conflicts become "ask before start". No key / any error → rules only. Only the needed fields are sent (no phone/email). User is in Germany: distributing to colleagues needs the paid Gemini tier + a relay holding the key; never put the key in the repo or exe.
 - 领星 (prefix match): `Outbound Order No`, `Remark`, `Recipient/`, `Company`, `Country/Region`, `City`, `Post code`, `House No`, `Address1`, `Address2`, `Province Name`, `Telephone`, `Email/`, `Total Qty of SKU`, `SKU n\nSKU`.
 - Wrong sheet type for the mode raises `SystemExit` with a hint to switch mode.
 
