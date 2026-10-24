@@ -12,7 +12,7 @@ import threading
 import tkinter as tk
 import traceback
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from tkinter.scrolledtext import ScrolledText
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -120,6 +120,7 @@ class App:
         self.stop_btn = ttk.Button(btns, text="停止", command=self._stop, state="disabled")
         self.stop_btn.pack(side="left", padx=6)
         ttk.Button(btns, text="使用说明", command=self._help).pack(side="right")
+        ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
 
         ttk.Label(root, text="运行记录：", padding=(10, 8, 10, 0)).pack(anchor="w")
@@ -272,11 +273,26 @@ class App:
         dlg.focus_force()
         # 不用 grab_set（模态）：弹窗一旦被挡住，主窗口会怎么点都没反应
 
+    def _ask_token(self):
+        """填写/修改授权码，保存到 xlfp_config.json。返回是否填了。"""
+        t = simpledialog.askstring(APP_NAME, f"请输入授权码（向开发者获取：{license_check.CONTACT}）：",
+                                   initialvalue=license_check.get_token(), parent=self.root)
+        if not t or not t.strip():
+            return False
+        try:
+            license_check.save_token(t)
+        except OSError as e:
+            messagebox.showerror(APP_NAME, f"授权码保存失败：{e}")
+            return False
+        return True
+
     # ------------------------------------------------------------ 运行
     def _start(self):
         xlsx = self.xlsx.get().strip().strip('"')
         if not xlsx or not Path(xlsx).is_file():
             messagebox.showwarning(APP_NAME, "请先选择 Excel 文件")
+            return
+        if not license_check.get_token() and not self._ask_token():
             return
         mode = self.mode.get()
         try:

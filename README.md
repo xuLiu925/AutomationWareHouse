@@ -96,20 +96,17 @@ python build.py
 | `pallet_params.json` | 产品托盘参数（单箱尺寸重量、每层个数、最大层数、Dachser 包装类型）；`_defaults` 为通用默认值。放在 exe 旁边，可直接修改 |
 | `危险品文件/` | 建单时上传的危险品文件，文件名（不含扩展名）= 领星 SKU，例如 `11US2000ZZD-20001.pdf` |
 | `dachser_profile/` | Chrome 登录信息（自动生成，已 gitignore，不会打包） |
-| `license_check.py` | 授权开关地址，见下文 |
+| `license_check.py` | 服务器地址 `SERVER_URL`（部署 Worker 后填写），见下文 |
+| `xlfp_config.json` | 本机授权码（窗口里点"授权码"填写，自动生成，已 gitignore，不会打包） |
 
-### 授权开关
+### 授权和 AI 服务器（`worker/`）
 
-软件每次点"开始"前读取公开仓库 [`xuLiu925/liuxu-license`](https://github.com/xuLiu925/liuxu-license) 里的 `license.json`：
+授权和 AI 整理都通过开发者自己的 Cloudflare Worker（`worker/worker.js`），部署和管理步骤见 [`worker/README.md`](worker/README.md)。
 
-```json
-{"enabled": true, "message": ""}
-```
-
-- `enabled: false` 时停止使用，显示 `message`（留空则用默认提示）
-- 连不上 GitHub 或文件格式不对时也不能使用
-- 在 GitHub 网页上修改即可，无需重新打包；GitHub 缓存约 5 分钟
-- 停用只是不再运行自动化，不删除、不修改任何文件
+- 每个同事一个授权码，存在程序目录的 `xlfp_config.json`；软件每次点"开始"前调用 `POST /check` 验证
+- 总开关（KV `config`）和每个人的开关（KV `user:<授权码>`）都在 Cloudflare 后台改，无需重新打包
+- 授权码无效、被停用、连不上服务器时都不能使用；停用只是不再运行自动化，不删除、不修改任何文件
+- 测试时可用环境变量 `XLFP_SERVER` 指向别的地址（例如本地模拟服务）
 
 ---
 
@@ -124,12 +121,11 @@ python build.py
 - 编号格里的备注和 `备注` 列脚本不处理，只在运行记录里列出来提示人工查看
 - `地址` → Street 栏（只填街道 + 门牌号，保留原顺序）：去掉括号备注、末尾国家（粘连的也去）、邮编、城市、`z.H./c/o/Attn` 前缀、开头的收件人/公司名；剩下像邮编的数字或没有门牌号时提示核对
 
-### AI 整理（可选）
-设置环境变量 `GEMINI_API_KEY`（Google AI Studio 的 Key）后，询价会先把每单的编号、地址、邮编、城市、国家、尾板、收件人、公司发给 Gemini 整理（不发电话、邮箱），模型默认 `gemini-3.5-flash-lite`，可用 `XLFP_AI_MODEL` 覆盖。
+### AI 整理
+询价时把每单的编号、地址、邮编、城市、国家、尾板、收件人、公司发到 Worker 的 `POST /clean`，由 Worker 调用 Gemini 整理（不发电话、邮箱）。Gemini Key、提示词和模型名都只在 Worker 上，exe 里没有。
 - AI 结果要过规则校验才用：编号必须原样出自编号格；Street 的每个词必须出自原地址且不含邮编；与规则结果冲突的编号/尾板开始前询问
-- 没有 Key 或调用失败时自动使用规则识别，行为与之前相同
-- 设置环境变量后要重新打开程序才生效；Key 不要写进代码或打包进 exe
-- 在欧盟给同事使用前需开通 Gemini 付费（条款要求面向 EEA 用户只能用付费服务），并考虑用中转服务保管 Key
+- 没有授权码、超过每日次数或调用失败时，自动使用规则识别
+- 在欧盟给同事使用必须开通 Gemini 付费（条款要求面向 EEA 用户只能用付费服务）
 
 ### 领星出库单
 领星直接导出即可。用到的列：`Outbound Order No`、`Remark/备注`、`Recipient/收件人`、`Company`、`Country/Region`、`City`、`Post code`、`House No.`、`Address1`、`Address2`、`Province Name`、`Telephone`、`Email`、`Total Qty of SKU`、`SKU 1\nSKU`（多 SKU 时 `SKU 2\nSKU` …）
@@ -143,9 +139,10 @@ python build.py
 ```
 gui.py              窗口界面（打包入口），后台线程运行自动化，print → 运行记录，ask() → 弹窗
 app_ui.py           APP_DIR（程序目录）、ask() 交互、停止标记 —— 命令行和窗口共用
-license_check.py    授权开关
+license_check.py    授权码、授权检查、调用 Worker
 dachser_fill.py     询价：Excel 解析、Filler（Playwright 页面封装）、登录、批量填写
-ai_clean.py         询价：可选的 Gemini 整理（编号/备注/Street/尾板），没有 Key 时不启用
+ai_clean.py         询价：经 Worker 调用 Gemini 整理（编号/备注/Street/尾板），失败时退回规则
+worker/             Cloudflare Worker：授权 + AI 中转（Gemini Key 和提示词在这里），不打包
 pallet_plan.py      托盘方案计算
 create_orders.py    建单：搜索报价、create、填写运输订单、危险品弹窗、上传文件、防锁单
 match_orders.py     领星表读取、地址比对（也可单独生成匹配结果 CSV）

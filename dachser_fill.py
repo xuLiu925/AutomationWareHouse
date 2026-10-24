@@ -854,7 +854,8 @@ def apply_ai(datas):
     if not datas:
         return ""
     if not ai_clean.available():
-        return "AI 整理：未配置 GEMINI_API_KEY，使用规则识别"
+        return "AI 整理：未填写授权码，使用规则识别"
+    print(f"AI 整理中（{len(datas)} 单，约需几秒）…", flush=True)
     res = ai_clean.clean_rows([d["_ai_input"] for d in datas])
     if res is None:
         return "AI 整理：调用失败，本次使用规则识别"
@@ -899,7 +900,7 @@ def apply_ai(datas):
             d["clean_notes"].append(f"⚠ AI 给的 Street {ai_street!r} 不像出自原地址，已改用规则结果")
         if (a.get("issues") or "").strip():
             d["clean_notes"].append("⚠ AI 提示: " + a["issues"].strip())
-    return f"AI 整理：已启用（{ai_clean.model_name()}）"
+    return f"AI 整理：已启用（{ai_clean.last_model or 'Gemini'}）"
 
 
 def print_streets(items):
