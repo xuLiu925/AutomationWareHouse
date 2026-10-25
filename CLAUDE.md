@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **询价 (quotation)**: Excel enquiry sheet → pallet plan → fills the freightquotation Enquiry form (`dachser_fill.py`)
 - **建单 (transport order)**: Lingxing (领星) outbound export → finds the quotation by MR number in "My enquiries" → clicks `create` → fills the transport order page (`create_orders.py`)
-- Shipped to colleagues as a Nuitka-compiled Windows GUI (`gui.py`, `build.py`). The repo is **private**; never make source public (license switch would be bypassable, `eLogistics.html` contains business data).
+- Shipped to colleagues as a Nuitka-compiled Windows GUI (`gui.py`, `build.py`). The repo is **public** (portfolio, the user's own project). Never add business data (customer orders, addresses, phones, real Excel exports) to tracked files; use made-up examples in comments and docs. `eLogistics.html` predates this and the user chose to leave it and the history as they are.
 
 The scripts fill but **never submit** (no Enquiry / Save click) — the user reviews and submits.
 
@@ -104,4 +104,4 @@ Lingxing WMS 按单复核 with "支持批量复核" ticked turns the serial inpu
 Nuitka `--standalone`, `--enable-plugin=tk-inter`, `--windows-console-mode=disable`, `--include-package=playwright` (the Nuitka playwright plugin bundles the driver; adding it manually conflicts). Nuitka's DLL tool breaks on non-ASCII paths: when the project root is ASCII (`D:\XLFreightPilot`) it compiles in place with the current Python into `build/` (`IN_PLACE`); otherwise sources are copied to `D:\liuxu_build` (`LIUXU_BUILD_DIR`) and built in a dedicated venv there. `NUITKA_CACHE_DIR` = `<stage>/cache` (compiler auto-downloaded, Zig). Output `dist/XL FreightPilot/` + zip, then runs `"XL FreightPilot.exe" --selftest`. Fails with a clear message if the old exe is still running. The user packages manually — don't run `build.py` unless asked.
 
 ## Git
-Remote `origin` = private `xuLiu925/AutomationWareHouse`, branch `main`. Commit/push only when asked; confirm the repo is still private before pushing. Never commit `危险品文件/`, `dachser_profile/`, `browser_profile/`, `*.xlsx`, `*.csv`, `license.json`, `xlfp_config.json`, `build/`, `dist/`.
+Remote `origin` = public `xuLiu925/AutomationWareHouse`, branch `main`. Commit/push only when asked; everything pushed is public. Never commit `危险品文件/`, `dachser_profile/`, `browser_profile/`, `*.xlsx`, `*.csv`, `license.json`, `xlfp_config.json`, `build/`, `dist/`.
