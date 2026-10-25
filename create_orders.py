@@ -10,7 +10,7 @@
 
 匹配规则（以备注为准）:
     备注里的 MR 编号（多个 MR 时全部都要出现）包含在 Dachser 单号里即算匹配，
-    例如备注 MR26100802 能匹配 Dachser 单号 MR26100802-a+b。备注里没有 MR 编号时用整段备注匹配。
+    例如备注 MR12345678 能匹配 Dachser 单号 MR12345678-a+b。备注里没有 MR 编号时用整段备注匹配。
     已经 created 的报价不算。
     - 唯一匹配: 自动点击 create；地址和领星不一致只打印提醒，不拦截
     - 多个匹配: 列出来，由你在浏览器里自己点 create
@@ -78,7 +78,7 @@ def remark_keys(remark):
 
 
 def matches(order, keys):
-    """Dachser 单号里包含全部关键字（MR 编号后面不能紧跟数字，避免 MR2610131 误配 MR26101313x）。"""
+    """Dachser 单号里包含全部关键字（MR 编号后面不能紧跟数字，避免 MR1234567 误配 MR12345678x）。"""
     return all(re.search(re.escape(k) + r"(?!\d)", order, re.I) for k in keys)
 
 
@@ -243,7 +243,7 @@ F_PHONE_BOOKING = "input[name$='selDeliveryOptions'][value='AT']"
 
 
 def norm_phone(s):
-    """'+353 86 199 4136' -> '+353861994136'（Dachser 要求 +4983159160 这种格式）。"""
+    """'+353 87 123 4567' -> '+353871234567'（Dachser 要求 +49891234567 这种格式）。"""
     s = re.sub(r"[^\d+]", "", s or "")
     return "+" + s[2:] if s.startswith("00") else s
 

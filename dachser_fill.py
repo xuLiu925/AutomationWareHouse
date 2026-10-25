@@ -196,7 +196,7 @@ ORDER_NO_MAX = 35      # Dachser Order number 输入框的最大长度
 
 
 def parse_order_no(raw):
-    """客户常把备注写进编号格：'MR26101527，客户收货时间…'。
+    """客户常把备注写进编号格：'MR12345678，客户收货时间…'。
     取开头连续的字母/数字/-_/. 作为编号，其余当备注。
     返回 (编号, 备注, 是否有把握)；没把握时由调用方问用户。"""
     if isinstance(raw, float) and raw.is_integer():
