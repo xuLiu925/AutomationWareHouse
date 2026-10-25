@@ -1,9 +1,10 @@
 # XL FreightPilot 服务端（Cloudflare Worker）
 
-`worker.js` 负责两件事：
+`worker.js` 负责三件事：
 
 - **授权**：每个同事一个授权码，总开关和每个人的开关都在这里控制
 - **AI 整理中转**：Gemini Key 和提示词只放在这里，exe 里没有
+- **产品托盘参数**：所有人共用一份，带版本历史；同事提交修改申请，管理员审核
 
 全部在 Cloudflare 网页后台操作，不用装任何工具。免费额度为每天 10 万次请求，用不完。
 
@@ -33,7 +34,8 @@
      - `daily`：每天最多做几次 AI 整理（一张表算一次），写 0 或不写表示不限
 3. 把授权码发给同事。同事在软件里点"授权码"按钮填进去即可。
 
-给自己也建一个授权码。
+给自己也建一个授权码，并加上 `"role": "admin"`（管理员：产品参数直接保存、审核申请、回滚版本）：
+`{"name": "刘旭", "enabled": true, "role": "admin"}`
 
 ## 三、日常管理（改完 1 分钟内生效，不用重新打包）
 
@@ -46,7 +48,25 @@
 | 换 Gemini Key | Settings → Variables and Secrets 里改 `GEMINI_API_KEY` |
 | 改提示词 | Edit code 改 `PROMPT`，再点 Deploy；同时把 `worker.js` 存回仓库 |
 
-## 四、费用和条款
+## 四、产品托盘参数和审核
+
+KV 里的键（程序自动维护，不用手改）：
+
+| 键 | 内容 |
+|---|---|
+| `products` | 当前生效的参数：`{"version", "updated", "by", "note", "data"}`，`data` 就是 `pallet_params.json` 的内容 |
+| `products:v:<版本号>` | 每个版本的快照，回滚用 |
+| `proposal:<id>` | 修改申请（提交人、内容、状态、驳回原因）；审完 90 天后自动删除 |
+
+- **第一次**：部署新的 `worker.js`、给自己加上 `role` 后，在软件里点"产品参数"，会提示把本机的
+  `pallet_params.json` 上传为第 1 版。之后以服务器为准，不要再手改同事电脑上的文件（会被覆盖）。
+- **审核**：同事提交后，你点"开始"询价时运行记录里会提示"有 N 条待审核"。在"产品参数"→"审核"页
+  能看到修改前后的对比和校验结果，点"通过"立即对所有人生效，点"驳回"可以写原因。
+- **回滚**："历史版本"页选一个版本 →"回滚到选中的版本"（另存为新版本，旧记录都保留）。
+- 校验规则在程序里（`pallet_plan.validate_product`），服务器只检查格式和权限。
+- KV 是最终一致的：刚提交的申请可能要几十秒后才出现在审核列表里。
+
+## 五、费用和条款
 
 - 在欧盟把程序给同事使用，Gemini 必须用**付费服务**（Gemini API 条款："You may use only Paid Services when making API Clients available to users in the European Economic Area"）。
   在 Google AI Studio 的项目里开通 Billing 即可，按用量计费。

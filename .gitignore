@@ -13,3 +13,5 @@ license.json
 危险品文件/
 xlfp_config.json
 worker/.wrangler/
+pallet_params.json.bak
+pallet_params.json.tmp

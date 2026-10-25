@@ -24,7 +24,7 @@ python dachser_fill.py 询价表.xlsx [--row 3] [--dry]       # single order gro
 python create_orders.py 领星.xlsx [--dry] [--days 30] [--dg-dir DIR] [-o out.csv]
 python create_orders.py 领星.xlsx --html eLogistics.html   # offline match preview (no browser login)
 python match_orders.py 领星.xlsx list.html|live            # standalone matching CSV
-python pallet_plan.py US2000 44
+python pallet_plan.py 11US2000ZZD-20001 44
 python build.py                                          # package (see below)
 ```
 
@@ -38,12 +38,15 @@ app_ui.py         APP_DIR, app_path(), ask(), stop flag — shared by CLI and GU
 license_check.py  token (xlfp_config.json), check() via Worker before each GUI run, post() helper
 dachser_fill.py   Excel parsing, Filler (page wrapper), _launch(), open_quotation() login, quotation batch
 ai_clean.py       AI cleanup of messy quotation cells via the Worker (no token / error → rules)
-worker/           Cloudflare Worker (JS): auth + Gemini relay; holds key + prompt; not bundled
-pallet_plan.py    plan_pallets(): params from pallet_params.json -> up to 2 order lines + notes
+worker/           Cloudflare Worker (JS): auth + Gemini relay + pallet params/review; holds key + prompt; not bundled
+pallet_plan.py    plan_pallets(): params from pallet_params.json -> up to 2 order lines + notes; load_raw/save_raw/validate_product/validate_defaults
+params_editor.py  tkinter editor for pallet_params.json (GUI button "产品参数"): submit for review / review / history
+params_sync.py    server sync of pallet params (Worker /products/*, /proposals/*), ServerError
 create_orders.py  search/match/create, fill_order(), add_dg_line(), upload_dg(), leave_edit_page()
 match_orders.py   read_lingxing(), check_address(), COUNTRY map, MR regex
 fetch_dachser.py  thin fetch helper for match_orders live mode (browser_profile/)
 build.py          Nuitka build
+xlfp-wms-sn.user.js  Tampermonkey script for Lingxing WMS (wms.xlwms.com) review page: commas → newlines in the batch serial textarea; copied to dist via EXTRA_FILES
 script.py, script1.py   PyCharm sample files, unused
 ```
 
@@ -82,7 +85,9 @@ Matching (`classify`): keys = all MR numbers in the remark (or the whole remark 
 - Wrong sheet type for the mode raises `SystemExit` with a hint to switch mode.
 
 ### pallet_params.json
-Per product: `packaging` (exact Dachser dropdown text), `carton_length_cm`, `carton_width_cm`, `carton_height_cm`, `carton_weight_kg`, `pallet_length_cm`, `pallet_width_cm`, `per_layer`, `max_layers`. Optional: `aliases`, `small_per_layer`, `layers_by_qty`, `full_pallet_height_cm`, `full_pallet_weight_kg`. `_defaults` holds shared limits (pallet height/weight, max total height 220, max weight 1500). Lives next to the exe; editing it needs no rebuild.
+Keyed by the product material code (Lingxing SKU, as in the 询价 `产品物料` column; exact match ignoring case/spaces, no aliases). Per product: `packaging` (exact Dachser dropdown text), `carton_length_cm`, `carton_width_cm`, `carton_height_cm`, `carton_weight_kg`, `pallet_length_cm`, `pallet_width_cm`, `per_layer`, `max_layers`, `full_pallet_height_cm`, `full_pallet_weight_kg` (measured full pallet, always used for full pallets). Optional: `small_per_layer`, `layers_by_qty`. `_defaults` holds shared limits (pallet height/weight, max total height 220, max weight 1500). Lives next to the exe; editing it needs no rebuild. Edited via `params_editor.py`: save-time validation in `pallet_plan.validate_product` (errors block: required > 0, ints, max_layers×carton height + pallet height ≤ total height, full pallet computed/measured weight ≤ max, layers_by_qty sane, duplicate SKU; warnings need confirm: measured lower/lighter than computed, carton bigger than pallet). Runtime has no separate height check by design. `save_raw` backs up to `.bak`, writes atomically and calls `reload()`.
+
+**Server is the source of truth** (Worker KV `products`, `products:v:<n>` history, `proposal:<id>`). `gui._run` calls `params_sync.sync_local()` before a quotation run → writes the local file as a cache with `_version` (failure → warn, use cache). Editor: `role: "admin"` on `user:<token>` saves directly (`/products/save` with `base_version`, 409 on stale) and reviews; everyone else submits proposals (`upsert` with `old_sku` for rename / `delete` / `defaults`) that only the admin approves — user's choice: review required, admin is the only reviewer, new + change + delete all reviewed. Approve re-validates the proposal against current data in the client; the Worker applies it (`applyProposal`) and only checks shape/permissions. No token / offline / disabled → editor is read-only. CLI runs use the local file without syncing.
 
 ## GUI (`gui.py`)
 - Worker thread + queue; `_poll` (every 100 ms) must never stop — errors are logged, a failed dialog falls back to `messagebox`, otherwise the worker waits forever.
@@ -91,6 +96,9 @@ Per product: `packaging` (exact Dachser dropdown text), `carton_length_cm`, `car
 
 ## License + AI server (`license_check.py`, `worker/`)
 Cloudflare Worker (`worker/worker.js`, deploy/admin steps in `worker/README.md`), URL in `license_check.SERVER_URL` (override with env `XLFP_SERVER`). Each colleague has a token (GUI button "授权码" → `xlfp_config.json` in APP_DIR, gitignored). `POST /check` and `POST /clean` with `Authorization: Bearer <token>`. KV `XLFP`: `config` (global switch), `user:<token>` (`name`, `enabled`, `daily` limit, `message`), `usage:<date>:<token>`. Only `enabled is True` passes; no token / 401 / 403 / network errors block use (user's choice). Disabled only stops automation — never delete or alter files. Keep the behavior disclosed (footer, `使用说明.txt`); don't add hidden mechanisms. Test locally with a Node server wrapping `worker.js` (in-memory KV) in the scratchpad.
+
+## WMS serial helper (`xlfp-wms-sn.user.js`)
+Lingxing WMS 按单复核 with "支持批量复核" ticked turns the serial input into `XlInputBatch` (popover textarea, one SN per line, whole list submitted at once). QR codes yield comma-separated SNs; the script rewrites the textarea on `input` (commas → newlines, trim, dedupe finished lines, last partial line untouched) via the native value setter + dispatched `input` event. Same token as the exe (Tampermonkey menu "设置授权码", `GM_setValue`), `POST /check` via `GM_xmlhttpRequest` (`@connect` the Worker host), cached 1 h when OK; not OK → no conversion, one toast per textarea focus. Plain JS, so the check is bypassable — disclosed. Never call WMS APIs from it. Test with a Playwright fixture stubbing `GM_*`.
 
 ## Build (`build.py`)
 Nuitka `--standalone`, `--enable-plugin=tk-inter`, `--windows-console-mode=disable`, `--include-package=playwright` (the Nuitka playwright plugin bundles the driver; adding it manually conflicts). Nuitka's DLL tool breaks on non-ASCII paths: when the project root is ASCII (`D:\XLFreightPilot`) it compiles in place with the current Python into `build/` (`IN_PLACE`); otherwise sources are copied to `D:\liuxu_build` (`LIUXU_BUILD_DIR`) and built in a dedicated venv there. `NUITKA_CACHE_DIR` = `<stage>/cache` (compiler auto-downloaded, Zig). Output `dist/XL FreightPilot/` + zip, then runs `"XL FreightPilot.exe" --selftest`. Fails with a clear message if the old exe is still running. The user packages manually — don't run `build.py` unless asked.
