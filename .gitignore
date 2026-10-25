@@ -15,3 +15,5 @@ xlfp_config.json
 worker/.wrangler/
 pallet_params.json.bak
 pallet_params.json.tmp
+pallet_params.json
+使用说明.txt
