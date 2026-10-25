@@ -32,8 +32,8 @@ STAGE = ROOT / "build" if IN_PLACE else Path(
 DIST = ROOT / "dist" / NAME
 EXE_TMP = "LiuXuScript.exe"     # 编译时用英文名，打包完再改名
 SOURCES = ["gui.py", "app_ui.py", "license_check.py", "dachser_fill.py", "ai_clean.py", "create_orders.py", "match_orders.py",
-           "pallet_plan.py"]
-EXTRA_FILES = ["pallet_params.json", "使用说明.txt"]
+           "pallet_plan.py", "params_editor.py", "params_sync.py"]
+EXTRA_FILES = ["pallet_params.json", "使用说明.txt", "xlfp-wms-sn.user.js"]
 PACKAGES = ["nuitka", f"playwright=={version('playwright')}", f"openpyxl=={version('openpyxl')}"]
 
 

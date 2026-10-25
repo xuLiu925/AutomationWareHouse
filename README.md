@@ -34,6 +34,12 @@
 4. 你检查后点 Save；离开前脚本会确认是否已保存，避免 Dachser 锁单
 5. 结果写入 Excel 旁边的 `<Excel名>_建单结果.csv`
 
+### WMS 序列号助手（`xlfp-wms-sn.user.js`）
+Tampermonkey 脚本，只在 `wms.xlwms.com` 生效。领星 WMS 按单复核勾选"支持批量复核"后，序列号框是多行框（`.xl-input-batch-popover textarea`，一行一个，提交时整批发送）。扫二维码得到的是逗号分隔的一串，脚本在输入时把 `,`/`，` 换成换行、去空格、去掉已扫完的重复序列号（还在扫的最后一个不动），再触发 `input` 事件让 Vue 拿到新值。
+- 授权：同一个授权码（Tampermonkey 菜单"设置授权码"，存在 Tampermonkey 里），`GM_xmlhttpRequest` 调 Worker `POST /check`，通过后 1 小时内不重复验证；不通过时不转换，并提示一次
+- 脚本是明文 JS，授权检查能被懂代码的人删掉，防护程度不如 exe
+- 安装步骤见 `使用说明.txt`，文件会随打包复制到 `dist/`
+
 ---
 
 ## 给同事使用（打包版）
@@ -66,7 +72,7 @@ python create_orders.py 领星导出.xlsx --dry         # 建单：只搜索匹�
 python create_orders.py 领星导出.xlsx               # 建单：搜索 + create + 填写
 python create_orders.py 领星导出.xlsx --html eLogistics.html   # 建单：离线匹配预览
 
-python pallet_plan.py US2000 44                   # 单独算托盘方案
+python pallet_plan.py 11US2000ZZD-20001 44        # 单独算托盘方案
 ```
 
 命令行模式下，需要确认的地方在终端里输入；窗口模式下是弹窗。改完代码直接运行即可验证，满意后再打包。
@@ -85,7 +91,7 @@ python build.py
 - Nuitka 不支持中文路径：项目在纯英文路径（`D:\XLFreightPilot`）时直接用当前 Python 在 `build/` 里编译；否则把源码复制到 `D:\liuxu_build`（环境变量 `LIUXU_BUILD_DIR` 可改）并在那里建专用虚拟环境编译；第一次约 10–20 分钟，之后几分钟
 - 打包后自动运行 `--selftest` 检查 Chrome、托盘参数和授权；看到 `自检结果: OK ...` 即成功
 - 新增 `.py` 模块时，要把文件名加到 `build.py` 的 `SOURCES` 里
-- 只改了 `pallet_params.json` 不需要重新打包，直接替换同事文件夹里的那个文件
+- 产品参数在服务器上改（"产品参数"窗口），不需要重新打包，也不用替换同事的文件
 
 ---
 
@@ -93,7 +99,7 @@ python build.py
 
 | 文件 / 目录 | 说明 |
 |---|---|
-| `pallet_params.json` | 产品托盘参数（单箱尺寸重量、每层个数、最大层数、Dachser 包装类型）；`_defaults` 为通用默认值。放在 exe 旁边，可直接修改 |
+| `pallet_params.json` | 产品托盘参数，键名 = 产品物料编码（领星 SKU）；单箱尺寸重量、每层个数、最大层数、整托实测高度/重量、Dachser 包装类型；`_defaults` 为通用默认值。**以服务器为准**：询价开始前自动下载到这里当缓存（`_version` = 版本号，旧文件备份为 `.bak`）；修改用窗口里的"产品参数"（同事提交审核，管理员审核/直接保存，见 `worker/README.md`） |
 | `危险品文件/` | 建单时上传的危险品文件，文件名（不含扩展名）= 领星 SKU，例如 `11US2000ZZD-20001.pdf` |
 | `dachser_profile/` | Chrome 登录信息（自动生成，已 gitignore，不会打包） |
 | `license_check.py` | 服务器地址 `SERVER_URL`（部署 Worker 后填写），见下文 |
@@ -143,11 +149,14 @@ license_check.py    授权码、授权检查、调用 Worker
 dachser_fill.py     询价：Excel 解析、Filler（Playwright 页面封装）、登录、批量填写
 ai_clean.py         询价：经 Worker 调用 Gemini 整理（编号/备注/Street/尾板），失败时退回规则
 worker/             Cloudflare Worker：授权 + AI 中转（Gemini Key 和提示词在这里），不打包
-pallet_plan.py      托盘方案计算
+pallet_plan.py      托盘方案计算，以及参数文件的读写和校验
+params_editor.py    "产品参数"编辑窗口（提交审核 / 审核 / 历史版本）
+params_sync.py      产品参数和服务器同步、申请和审核接口
 create_orders.py    建单：搜索报价、create、填写运输订单、危险品弹窗、上传文件、防锁单
 match_orders.py     领星表读取、地址比对（也可单独生成匹配结果 CSV）
 fetch_dachser.py    match_orders.py live 模式用的简单抓取
 build.py            Nuitka 打包
+xlfp-wms-sn.user.js 领星 WMS 序列号助手（Tampermonkey 脚本，随打包复制）
 使用说明.txt         给同事的说明（打包进去）
 eLogistics.html     保存的 My enquiries 列表页，用于离线测试（含业务数据，勿公开）
 ```

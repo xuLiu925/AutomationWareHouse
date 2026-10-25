@@ -121,6 +121,7 @@ class App:
         self.stop_btn.pack(side="left", padx=6)
         ttk.Button(btns, text="使用说明", command=self._help).pack(side="right")
         ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right", padx=(6, 0))
+        ttk.Button(btns, text="产品参数", command=self._edit_params).pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
 
         ttk.Label(root, text="运行记录：", padding=(10, 8, 10, 0)).pack(anchor="w")
@@ -273,6 +274,10 @@ class App:
         dlg.focus_force()
         # 不用 grab_set（模态）：弹窗一旦被挡住，主窗口会怎么点都没反应
 
+    def _edit_params(self):
+        import params_editor
+        params_editor.open_editor(self.root)
+
     def _ask_token(self):
         """填写/修改授权码，保存到 xlfp_config.json。返回是否填了。"""
         t = simpledialog.askstring(APP_NAME, f"请输入授权码（向开发者获取：{license_check.CONTACT}）：",
@@ -316,6 +321,12 @@ class App:
                 app_ui.ask(why, [("c", "确定")])
                 return
             if mode == "inquiry":
+                import params_sync
+                try:
+                    for m in params_sync.sync_local():
+                        print(m)
+                except params_sync.ServerError as e:
+                    print(f"⚠ 产品参数同步失败，使用本机的参数：{e}")
                 import dachser_fill
                 dachser_fill.main_batch(argparse.Namespace(
                     xlsx=xlsx, dry=dry, yes=False, url=dachser_fill.START_URL, profile="dachser_profile",
@@ -365,7 +376,7 @@ def selftest():
             b.close()
         import openpyxl  # noqa: F401
         import pallet_plan
-        pallet_plan.plan_pallets("US2000", 44)
+        pallet_plan.plan_pallets("11US2000ZZD-20001", 44)
         lic = license_check.check()      # 只报告，不影响自检结果（授权文件可能还没放好）
         out.write_text(f"OK browser={r} app_dir={APP_DIR} license={lic}\n", encoding="utf-8")
     except BaseException:
