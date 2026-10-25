@@ -22,7 +22,6 @@ from app_ui import APP_DIR  # noqa: E402
 
 APP_NAME = "XL FreightPilot"
 APP_TITLE = f"{APP_NAME} — Freight Quotation & Order Automation"
-HELP_FILE = APP_DIR / "使用说明.txt"
 
 
 def _foreground_rect():
@@ -119,8 +118,7 @@ class App:
         self.start_btn.pack(side="left")
         self.stop_btn = ttk.Button(btns, text="停止", command=self._stop, state="disabled")
         self.stop_btn.pack(side="left", padx=6)
-        ttk.Button(btns, text="使用说明", command=self._help).pack(side="right")
-        ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right", padx=(6, 0))
+        ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right")
         ttk.Button(btns, text="产品参数", command=self._edit_params).pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
 
@@ -157,12 +155,6 @@ class App:
         d = filedialog.askdirectory(title="选择危险品文件夹", initialdir=self.dg_dir.get() or str(APP_DIR))
         if d:
             self.dg_dir.set(d)
-
-    def _help(self):
-        if HELP_FILE.exists():
-            os.startfile(HELP_FILE)
-        else:
-            messagebox.showinfo(APP_NAME, f"找不到 {HELP_FILE.name}")
 
     def _poll(self):
         """每 100ms 取一次后台线程发来的日志/弹窗。任何一步出错都不能让这个循环停掉，否则界面会卡死。"""

@@ -38,7 +38,7 @@
 Tampermonkey 脚本，只在 `wms.xlwms.com` 生效。领星 WMS 按单复核勾选"支持批量复核"后，序列号框是多行框（`.xl-input-batch-popover textarea`，一行一个，提交时整批发送）。扫二维码得到的是逗号分隔的一串，脚本在输入时把 `,`/`，` 换成换行、去空格、去掉已扫完的重复序列号（还在扫的最后一个不动），再触发 `input` 事件让 Vue 拿到新值。
 - 授权：同一个授权码（Tampermonkey 菜单"设置授权码"，存在 Tampermonkey 里），`GM_xmlhttpRequest` 调 Worker `POST /check`，通过后 1 小时内不重复验证；不通过时不转换，并提示一次
 - 脚本是明文 JS，授权检查能被懂代码的人删掉，防护程度不如 exe
-- 安装步骤见 `使用说明.txt`，文件会随打包复制到 `dist/`
+- 文件会随打包复制到 `dist/`；同事安装时当面指导
 
 ---
 
@@ -51,7 +51,7 @@ Tampermonkey 脚本，只在 `wms.xlwms.com` 生效。领星 WMS 按单复核勾
 3. 双击 `XL FreightPilot.exe`，第一次在弹出的 Chrome 里登录 Dachser（建议让 Chrome 记住密码，以后会自动登录）
 4. 选功能 → 选 Excel → 开始
 
-详细说明见 [`使用说明.txt`](使用说明.txt)（会一起打包进去）。
+有问题直接问开发者。
 
 ---
 
@@ -99,7 +99,7 @@ python build.py
 
 | 文件 / 目录 | 说明 |
 |---|---|
-| `pallet_params.json` | 产品托盘参数，键名 = 产品物料编码（领星 SKU）；单箱尺寸重量、每层个数、最大层数、整托实测高度/重量、Dachser 包装类型；`_defaults` 为通用默认值。**以服务器为准**：询价开始前自动下载到这里当缓存（`_version` = 版本号，旧文件备份为 `.bak`）；修改用窗口里的"产品参数"（同事提交审核，管理员审核/直接保存，见 `worker/README.md`） |
+| `pallet_params.json` | 不在 Git 里（`.gitignore`），打包前本机要有一份。产品托盘参数，键名 = 产品物料编码（领星 SKU）；单箱尺寸重量、每层个数、最大层数、整托实测高度/重量、Dachser 包装类型；`_defaults` 为通用默认值。**以服务器为准**：询价开始前自动下载到这里当缓存（`_version` = 版本号，旧文件备份为 `.bak`）；修改用窗口里的"产品参数"（同事提交审核，管理员审核/直接保存，见 `worker/README.md`） |
 | `危险品文件/` | 建单时上传的危险品文件，文件名（不含扩展名）= 领星 SKU，例如 `11US2000ZZD-20001.pdf` |
 | `dachser_profile/` | Chrome 登录信息（自动生成，已 gitignore，不会打包） |
 | `license_check.py` | 服务器地址 `SERVER_URL`（部署 Worker 后填写），见下文 |
@@ -157,7 +157,6 @@ match_orders.py     领星表读取、地址比对（也可单独生成匹配结
 fetch_dachser.py    match_orders.py live 模式用的简单抓取
 build.py            Nuitka 打包
 xlfp-wms-sn.user.js 领星 WMS 序列号助手（Tampermonkey 脚本，随打包复制）
-使用说明.txt         给同事的说明（打包进去）
 eLogistics.html     保存的 My enquiries 列表页，用于离线测试（含业务数据，勿公开）
 ```
 
