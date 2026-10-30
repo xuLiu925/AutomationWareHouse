@@ -3,7 +3,8 @@ AI 整理询价表里客户乱写的格子（编号混备注、地址里带邮�
 
 - 通过开发者的服务器（worker/worker.js，Cloudflare Worker）调用 Google Gemini；
   Gemini Key 和提示词都只在服务器上，这里只发数据、收结果。用的是授权码（license_check）。
-- 每一单都发给 AI。只发送整理需要的字段（编号、地址、邮编、城市、国家、尾板、收件人、公司），不发电话和邮箱。
+- 每一单都发给 AI。只发送整理需要的字段：地址、House No、Address2、邮编、城市、国家、收件人、公司，
+  询价再加编号和尾板。不发电话和邮箱。
 - 没有授权码或调用失败时返回 None，调用方改用规则版。
 - AI 结果由调用方用规则校验（编号必须出自原文、街道不能含邮编等），不直接信任。
 """
@@ -11,7 +12,8 @@ import license_check
 
 TIMEOUT_S = 120
 
-FIELDS = ("编号", "地址", "邮编", "城市", "国家", "是否需要尾板", "收件人", "公司名称")
+STREET_FIELDS = ("地址", "House No", "Address2", "邮编", "城市", "国家", "收件人", "公司名称")
+FIELDS = ("编号", "是否需要尾板") + STREET_FIELDS
 
 last_model = ""     # 服务器返回的模型名，打印用
 
@@ -29,12 +31,22 @@ def _cell(v):
 def clean_rows(rows):
     """rows: [{"row": Excel 行号, "编号": ..., "地址": ..., ...}]
     返回 {行号: {"order_no", "remark", "street", "tail_lift", "issues"}}；不可用或失败返回 None。"""
+    return _call("/clean", rows, FIELDS)
+
+
+def clean_streets(rows):
+    """建单用，rows: [{"row": 序号, "地址": ..., "House No": ..., ...}]
+    返回 {序号: {"street", "issues"}}；不可用或失败返回 None。"""
+    return _call("/street", rows, STREET_FIELDS)
+
+
+def _call(path, rows, fields):
     global last_model
     if not available() or not rows:
         return None
-    payload = [{"row": r["row"], **{k: _cell(r.get(k)) for k in FIELDS}} for r in rows]
+    payload = [{"row": r["row"], **{k: _cell(r.get(k)) for k in fields}} for r in rows]
     try:
-        status, data = license_check.post("/clean", {"rows": payload}, TIMEOUT_S)
+        status, data = license_check.post(path, {"rows": payload}, TIMEOUT_S)
     except Exception as e:
         print(f"  [AI] 连不上服务器（{str(e).splitlines()[0] if str(e) else repr(e)}），改用规则识别")
         return None

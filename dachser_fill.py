@@ -115,50 +115,63 @@ def norm_zip(raw, country):
     return re.sub(r"\s+", " ", s).strip().upper()
 
 
-# ---------------------------------------------------------------- 地址拆分
-def split_street(address, zip_raw, city):
-    """'51 allée de courbiat 87350, Panazol' -> ('allée de courbiat', '51')"""
-    a = str(address or "").strip()
-    a = re.sub(r"\s+", " ", a)
-    if city:
-        a = re.sub(r",?\s*" + re.escape(str(city)) + r"\s*$", "", a, flags=re.I)
-    z = str(zip_raw or "").strip()
-    cands = {z, re.sub(r"^[A-Za-z]{1,3}\s*-\s*", "", z), re.sub(r"\D", "", z)}
-    for c in sorted((c for c in cands if c), key=len, reverse=True):
-        a = re.sub(r",?\s*(?:[A-Za-z]{1,3}\s*-\s*)?" + re.escape(c) + r"\b", "", a)
-    a = a.strip(" ,;")
-    # 门牌号：开头（法/英/荷风格）或结尾（德风格）
-    m = re.match(r"^(\d+\s?[A-Za-z]?(?:\s?[-/]\s?\d+[A-Za-z]?)?)[,\s]+(.+)$", a)
-    if m:
-        return m.group(2).strip(" ,"), m.group(1).replace(" ", "")
-    m = re.match(r"^(.+?)[,\s]+(\d+\s?[A-Za-z]?(?:\s?[-/]\s?\d+[A-Za-z]?)?)$", a)
-    if m:
-        return m.group(1).strip(" ,"), m.group(2).replace(" ", "")
-    return a, ""
-
-
+# ---------------------------------------------------------------- 地址整理
+NUMBER_FIRST = {"France", "Ireland", "United Kingdom", "Luxembourg"}      # 这些国家门牌号写在街道前面
+_HOUSE_NO = r"\d+\s?[A-Za-z]?(?:\s?[-/]\s?\d+[A-Za-z]?)?"
 _STREET_WORD = (r"(stra(ß|ss)e|str\.|weg|gasse|platz|allee|ring|damm|ufer|steig|straat|laan|dreef|"
                 r"plein|rue|avenue|chemin|via|calle|road|street)")
 _ALL_COUNTRY_NAMES = sorted({a for al in _COUNTRIES.values() for a in al if len(a) > 3}
                             | {n.lower() for n in _COUNTRIES}, key=len, reverse=True)
 
 
+def _zip_text(zip_raw):
+    if isinstance(zip_raw, float) and zip_raw.is_integer():
+        zip_raw = int(zip_raw)
+    return str(zip_raw if zip_raw is not None else "").strip()
+
+
+def _zip_pattern(zip_raw):
+    """地址里邮编的写法：允许 'LT-21134'、'619 00'/'61900'，纯数字邮编允许 Excel 吃掉的前导 0。"""
+    z = _zip_text(zip_raw)
+    if not z:
+        return ""
+    if re.fullmatch(r"(?:[A-Za-z]{1,3}\s*-\s*)?[\d\s]+", z) and len(re.sub(r"\D", "", z)) >= 4:
+        core = r"\s*".join(re.sub(r"\D", "", z).lstrip("0"))
+        return r"(?<![\w-])(?:[A-Za-z]{1,3}\s*-\s*)?0*" + core + r"(?!\w)"
+    return r"(?<!\w)" + r"\s*".join(re.escape(c) for c in z.replace(" ", "")) + r"(?!\w)"
+
+
+def _strip_tail(s, word):
+    """去掉末尾的城市/国家名。前面要有逗号或门牌号，或者粘在小写字母后（'RiedstadtGermany'），
+    否则可能是街名本身（'Rue de Paris'、'Rue de France'）。"""
+    m = re.search(r"([,\s]*)" + re.escape(word) + r"\s*$", s, re.I)
+    if not m or not m.start():
+        return s
+    before, sep = s[:m.start()], m.group(1)
+    glued = not sep and before[-1].islower() and s[m.end(1)].isupper()
+    if "," in sep or glued or re.search(r"\d[A-Za-z]?$", before):
+        return before
+    return s
+
+
 def clean_street(address, zip_raw, city, names=()):
-    """询价单 Street 栏只填街道 + 门牌号（一个格子，保留原顺序）。
-    去掉地址里的括号备注、国家、邮编、城市、z.H./c/o 前缀、开头的收件人/公司名（names）。
+    """Street 栏只填街道 + 门牌号（一个格子，保留原顺序，法国等门牌号在前也不动）。
+    去掉地址里的括号备注、国家、邮编及其后的内容、城市、z.H./c/o 前缀、开头的收件人/公司名（names）。
     返回 (street, 括号备注列表)。"""
     s = str(address or "").translate(str.maketrans("，、；（）：", ",,;():"))
     notes = [n.strip() for n in re.findall(r"\(([^)]*)\)", s) if n.strip()]
     s = re.sub(r"\([^)]*\)", " ", s)
-    for n in _ALL_COUNTRY_NAMES:          # 国家名在末尾，粘在城市后面也去掉（'RiedstadtGermany'）
-        s = re.sub(r"[,\s]*" + re.escape(n) + r"\s*$", "", s, flags=re.I)
-    z = str(zip_raw if zip_raw is not None else "").strip()
-    if isinstance(zip_raw, float) and zip_raw.is_integer():
-        z = str(int(zip_raw))
-    if z:
-        s = re.sub(r"(?:\b[A-Za-z]{1,2}\s*-\s*)?" + re.escape(z) + r"\b", " ", s)
+    city = str(city or "").strip()
+    for n in _ALL_COUNTRY_NAMES:
+        s = _strip_tail(s.rstrip(), n)
+        city = _strip_tail(city, n)
+    s = s.strip(" ,;")
+    pat = _zip_pattern(zip_raw)
+    m = re.search(pat, s) if pat else None
+    if m:                                 # 邮编后面只会是城市/国家；前面没内容时才保留后面
+        s = s[:m.start()] if s[:m.start()].strip(" ,;") else s[m.end():]
     if city:
-        s = re.sub(r"[,\s]*" + re.escape(str(city).strip()) + r"\s*$", "", s.strip(" ,;"), flags=re.I)
+        s = _strip_tail(s.strip(" ,;"), city)
     if re.match(r"^\s*(z\.?\s*h(d|änden)?\.?|c/o|attn\.?:?)\s+", s, re.I):
         w = re.search(r"[^\s,]*" + _STREET_WORD, s, re.I)
         if w:
@@ -167,6 +180,11 @@ def clean_street(address, zip_raw, city, names=()):
         n = re.sub(r"\s+", " ", str(n or "")).strip()
         if len(n) >= 3:
             s = re.sub(r"^\s*" + re.escape(n) + r"[\s,]+(?=\S)", "", s, flags=re.I)
+    # 逗号分段时取第一段同时有字母和数字的（公司/仓库名在前、区名在后都不要）
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    hit = [p for p in parts if re.search(r"\d", p) and re.search(r"[^\W\d_]", p)]
+    if len(parts) > 1 and hit:
+        s = hit[0]
     return re.sub(r"\s+", " ", s).strip(" ,;"), notes
 
 
@@ -180,15 +198,95 @@ def street_warnings(street):
     return out
 
 
-def street_ok(street, address, zip_raw):
-    """AI 给的街道必须每个词都出自原地址，且不含邮编（防止 AI 编造或漏删）。"""
+def street_input(address, zip_raw, city, country, recipient, company, hno="", addr2=""):
+    """询价和建单的 Street 用同一份输入（也是发给 AI 的字段）；询价表没有 House No / Address2，留空。"""
+    return {"地址": address, "House No": re.sub(r"\.0$", "", str(hno or "").strip()),
+            "Address2": str(addr2 or "").strip(), "邮编": zip_raw, "城市": city, "国家": country,
+            "收件人": recipient, "公司名称": company}
+
+
+def rule_street(inp):
+    """规则版 Street（询价、建单共用）：整理地址后补 House No，保留原顺序。Address2 只有纯门牌号时才用。
+    返回 (street, 括号备注列表, 提醒列表)。"""
+    notes = []
+    street, addr_notes = clean_street(inp["地址"], inp["邮编"], inp["城市"], (inp["收件人"], inp["公司名称"]))
+    hno, addr2 = inp["House No"], inp["Address2"]
+    if addr2 and not hno and not re.search(r"\d", street) and re.fullmatch(_HOUSE_NO, addr2):
+        hno, addr2 = addr2, ""
+    if addr2 and addr2 != hno:
+        notes.append(f"⚠ Address2 没有填进 Street，请确认是否需要: {addr2!r}")
+    if not hno or re.search(rf"(?<![\w/-]){re.escape(hno)}(?![\w/-])", street, re.I):
+        return street, addr_notes, notes
+    try:
+        front = norm_country(inp["国家"]) in NUMBER_FIRST
+    except ValueError:
+        front = False
+    if re.match(r"\d", street) if front else re.search(_HOUSE_NO + "$", street):
+        notes.append(f"⚠ House No {hno!r} 和地址里的门牌号不一致，Street 保留地址原文，请核对")
+        return street, addr_notes, notes
+    return (f"{hno} {street}" if front else f"{street} {hno}").strip(), addr_notes, notes
+
+
+def street_ok(street, address, zip_raw, city="", names=(), rule="", hno=""):
+    """校验 AI 给的街道，不通过返回原因，通过返回 ""（防止 AI 编造、漏门牌号、没删干净）。
+    address 是原地址全文；rule 是规则结果，用来判断原地址有没有门牌号；hno 是 House No 列。"""
     if not street:
-        return False
+        return "是空的"
+    if not re.search(r"[^\W\d_]", street):
+        return "没有街道名"
     raw = str(address or "").lower()
-    z = re.sub(r"\D", "", str(zip_raw or ""))
-    if z and len(z) >= 4 and z in re.sub(r"\D", " ", street).split():
+    words = re.findall(r"\w+", street.lower())
+    if not all(re.search(rf"(?<!\d){t}(?!\d)" if t.isdigit() else re.escape(t), raw) for t in words):
+        return "有原地址里没有的内容"
+    pat = _zip_pattern(zip_raw)
+    if pat and re.search(pat, street):
+        return "还含有邮编"
+    if re.search(r"(?<!\d)\d{1,3}(?!\d)", rule) and not re.search(r"\d", street):
+        return "漏了门牌号"
+    if any(t and _strip_tail(street, t) != street for t in [city] + _ALL_COUNTRY_NAMES):
+        return "还含有城市或国家"
+    for n in names:
+        n = re.sub(r"\s+", " ", str(n or "")).strip().lower()
+        if len(n) >= 3 and street.lower().startswith(n) and len(street) > len(n):
+            return "还含有收件人或公司名"
+    if hno and not re.search(rf"(?<!\w){re.escape(hno)}(?!\w)", street, re.I):
+        return "没有用 House No"
+    return ""
+
+
+def merge_ai_street(rec, inp, a):
+    """把 AI 结果合并进 rec（street / street_src / street_alt / street_notes），询价、建单共用。
+    通过 street_ok 就用 AI；不通过且和规则不同，留到 ask_street 让人选。"""
+    ai = re.sub(r"\s+", " ", (a.get("street") or "")).strip(" ,;")
+    raw = " ".join(str(inp[k] or "") for k in ("地址", "House No", "Address2"))
+    bad = street_ok(ai, raw, inp["邮编"], inp["城市"], (inp["收件人"], inp["公司名称"]), rec["street"], inp["House No"])
+    if not bad:
+        rec["street"], rec["street_src"] = ai, "AI"
+        rec["street_notes"] = [n for n in rec["street_notes"] if not n.startswith("⚠ House No")]
+    elif ai and ai != rec["street"]:
+        rec["street_alt"] = ai
+        rec["street_notes"].append(f"⚠ AI 给的 Street {ai!r} {bad}，规则结果 {rec['street']!r}，需要确认")
+    if (a.get("issues") or "").strip():
+        rec["street_notes"].append("⚠ AI 提示: " + a["issues"].strip())
+
+
+def street_all_notes(rec):
+    return rec["street_notes"] + street_warnings(rec["street"])
+
+
+def ask_street(rec, label, raw, can_skip=True):
+    """AI 结果没通过校验时让人选。返回 False = 用户选择跳过这单。"""
+    if not rec.get("street_alt"):
+        return True
+    ans = ask(f"{label} 的 Street 认不准：\n原文：{raw}",
+              [("r", f"用规则结果 {rec['street']}"), ("a", f"用 AI 结果 {rec['street_alt']}")]
+              + ([("s", "跳过这单，手动处理")] if can_skip else []))
+    if ans == "s":
         return False
-    return all(t.lower() in raw for t in re.findall(r"\w+", street))
+    if ans == "a":
+        rec["street"] = rec["street_alt"]
+    rec["street_alt"] = ""
+    return True
 
 
 # ---------------------------------------------------------------- 编号 / 尾板 识别
@@ -305,8 +403,9 @@ def read_order_group(path, row_nums):
     country = norm_country(first.get("国家"))
     zip_ = norm_zip(first.get("邮编"), country)
     city = str(first.get("城市") or "").strip()
-    street, addr_notes = clean_street(first.get("地址"), first.get("邮编"), city,
-                                      (first.get("收件人"), first.get("公司名称")))
+    addr_input = street_input(first.get("地址"), first.get("邮编"), city, first.get("国家"),
+                              first.get("收件人"), first.get("公司名称"))
+    street, addr_notes, street_notes = rule_street(addr_input)
     tail_col = _col(headers, "是否需要尾板")
     tail_raw = first.get(tail_col) if tail_col else None
     tail_lift = parse_tail_lift(tail_raw)
@@ -422,11 +521,10 @@ def read_order_group(path, row_nums):
         "street": street,
         "number": "",                      # 询价单 Street 栏只有一个格子，门牌号已在 street 里
         "street_src": "规则",
+        "street_alt": "",
+        "street_notes": street_notes,
         "clean_notes": [],
-        "_ai_input": {"row": row_nums[0], "编号": first.get("编号"), "地址": first.get("地址"),
-                      "邮编": first.get("邮编"), "城市": city, "国家": first.get("国家"),
-                      "是否需要尾板": tail_raw, "收件人": first.get("收件人"),
-                      "公司名称": first.get("公司名称")},
+        "_ai_input": {"row": row_nums[0], "编号": first.get("编号"), "是否需要尾板": tail_raw, **addr_input},
         "goods_value": "5000" if total_qty <= 4 else "10000",
         "dangerous": is_dangerous,
         "tail_lift": tail_lift,
@@ -891,15 +989,7 @@ def apply_ai(datas):
             d["tail_lift"] = None
             d["clean_notes"].append("尾板: 规则和 AI 判断不一致，开始前确认")
         # 街道：AI 结果要通过校验才用
-        ai_street = re.sub(r"\s+", " ", (a.get("street") or "")).strip(" ,;")
-        if street_ok(ai_street, inp["地址"], inp["邮编"]):
-            if ai_street != d["street"]:
-                d["clean_notes"].append(f"Street 用 AI 结果 {ai_street!r}（规则结果 {d['street']!r}）")
-            d["street"], d["street_src"] = ai_street, "AI"
-        elif ai_street:
-            d["clean_notes"].append(f"⚠ AI 给的 Street {ai_street!r} 不像出自原地址，已改用规则结果")
-        if (a.get("issues") or "").strip():
-            d["clean_notes"].append("⚠ AI 提示: " + a["issues"].strip())
+        merge_ai_street(d, inp, a)
     return f"AI 整理：已启用（{ai_clean.last_model or 'Gemini'}）"
 
 
@@ -912,8 +1002,7 @@ def print_streets(items):
             d = it["data"]
             print(f"  {_rows_label(it['rows'])} {d['street']!r:34} ← 原文 {d['_raw_address']!r}  [{d['street_src']}]")
     notes = [(it, n) for it in items if it["data"]
-             for n in it["data"]["clean_notes"] + street_warnings(it["data"]["street"])
-             if not n.startswith("Street 用 AI")]
+             for n in it["data"]["clean_notes"] + street_all_notes(it["data"])]
     if notes:
         print("\n🔎 整理说明（编号 / 尾板 / 地址）：")
         for it, n in notes:
@@ -921,7 +1010,7 @@ def print_streets(items):
 
 
 def resolve_uncertain(d, label):
-    """编号没把握、尾板认不出时问用户，结果写回 d。返回 False = 用户选择跳过这单。"""
+    """编号没把握、尾板认不出、Street 的 AI 结果没通过校验时问用户，结果写回 d。返回 False = 用户选择跳过这单。"""
     if not d["order_no_sure"]:
         raw = d["order_no_raw"]
         alt = d.get("order_no_alt")
@@ -941,7 +1030,7 @@ def resolve_uncertain(d, label):
                   f"{'是空的' if not d['tail_raw'] else '写的是：' + d['tail_raw']}，需要尾板吗？",
                   [("y", "需要尾板"), ("n", "不需要尾板")])
         d["tail_lift"] = ans == "y"
-    return True
+    return ask_street(d, f"{label}（编号 {d['order_no']}）", d["_raw_address"])
 
 
 def _tail_text(d):
@@ -1178,15 +1267,16 @@ def main_batch(args):
     print_remarks(items)
 
     todo = [it for it in items if not it["error"]]
-    unsure = [it for it in todo if not it["data"]["order_no_sure"] or it["data"]["tail_lift"] is None]
+    unsure = [it for it in todo if not it["data"]["order_no_sure"] or it["data"]["tail_lift"] is None
+              or it["data"].get("street_alt")]
     if unsure:
-        print(f"\n有 {len(unsure)} 个订单的编号或尾板需要确认（⚠编号待确认 / 尾板?），开始前会逐个询问。")
+        print(f"\n有 {len(unsure)} 个订单的编号、尾板或 Street 需要确认，开始前会逐个询问。")
     print(f"\n将填写 {len(todo)} 个订单，跳过 {len(items) - len(todo)} 个（跳过的请手动处理）。")
     if not todo or args.dry:
         return
     for it in unsure:
         if not resolve_uncertain(it["data"], _rows_label(it["rows"])):
-            it["error"] = "用户选择跳过（编号认不准）"
+            it["error"] = "用户选择跳过（信息认不准）"
         it["order_no"] = it["data"]["order_no"]
     todo = [it for it in todo if not it["error"]]
     if not todo:
@@ -1275,7 +1365,7 @@ def main():
 
     d = read_row(args.xlsx, args.row)
     print(apply_ai([d]))
-    for n in d["clean_notes"] + street_warnings(d["street"]):
+    for n in d["clean_notes"] + street_all_notes(d):
         print(f"  🔎 {n}")
     print("解析结果:")
     for k, v in d.items():

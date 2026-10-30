@@ -71,4 +71,4 @@ KV 里的键（程序自动维护，不用手改）：
 - 在欧盟把程序给同事使用，Gemini 必须用**付费服务**（Gemini API 条款："You may use only Paid Services when making API Clients available to users in the European Economic Area"）。
   在 Google AI Studio 的项目里开通 Billing 即可，按用量计费。
 - 建议在 Google Cloud 的 Billing → Budgets 里设一个每月预算提醒（比如 5 欧元）。
-- Worker 发给 Gemini 的只有：编号、地址、邮编、城市、国家、尾板、收件人、公司。不包含电话和邮箱。
+- Worker 发给 Gemini 的只有：地址、House No、Address2、邮编、城市、国家、收件人、公司，询价再加编号和尾板。不包含电话和邮箱。
