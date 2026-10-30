@@ -29,8 +29,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import app_ui  # noqa: E402
 from app_ui import APP_DIR, ask  # noqa: E402
 from match_orders import MR, check_address, read_lingxing  # noqa: E402
-from dachser_fill import (START_URL, Filler, _launch, _quotation_link, norm_country, norm_zip,  # noqa: E402
-                          open_quotation, split_street)
+import ai_clean  # noqa: E402
+from dachser_fill import (START_URL, Filler, _launch, _quotation_link, ask_street, merge_ai_street,  # noqa: E402
+                          norm_country, norm_zip, open_quotation, rule_street, street_all_notes, street_input)
 
 # 在页面里读出报价表的每一行（含 create 按钮状态）
 JS_ROWS = r"""() => {
@@ -224,6 +225,43 @@ def click_create(page, row):
     btn.scroll_into_view_if_needed(timeout=5000)
     btn.click(timeout=10000)
     wait_ajax(page, 1000)
+
+
+# ---------------------------------------------------------------- Street 整理
+def prepare_streets(lx_rows):
+    """开始前算好每单的 Street，和询价同一套逻辑：先规则，再 AI（校验不过的留到建单时询问）。结果写回 lx。"""
+    inputs = []
+    for i, lx in enumerate(lx_rows):
+        inp = {"row": i, **street_input(lx["addr"], lx["zip"], lx["city"], lx["country"], lx["recipient"],
+                                        lx["company"], lx["hno"], lx["addr2"])}
+        inputs.append(inp)
+        lx["street"], _, lx["street_notes"] = rule_street(inp)
+        lx["street_src"], lx["street_alt"] = "规则", ""
+    if not ai_clean.available():
+        print("AI 整理：未填写授权码，使用规则识别")
+        return
+    print(f"AI 整理 Street 中（{len(lx_rows)} 单，约需几秒）…", flush=True)
+    res = ai_clean.clean_streets(inputs)
+    if res is None:
+        print("AI 整理：调用失败，本次使用规则识别")
+        return
+    for lx, inp in zip(lx_rows, inputs):
+        a = res.get(inp["row"])
+        if a:
+            merge_ai_street(lx, inp, a)
+        else:
+            lx["street_notes"].append("⚠ AI 没有返回这一单的结果，Street 使用规则识别")
+    print(f"AI 整理：已启用（{ai_clean.last_model or 'Gemini'}）")
+
+
+def print_streets(lx_rows):
+    print("\n🏠 建单时填入的 Street（请核对）：")
+    for lx in lx_rows:
+        print(f"  {lx['no']:<18} {lx['street']!r:34} ← 原文 {lx['addr']!r}"
+              + (f" / House No {lx['hno']!r}" if lx["hno"] else "")
+              + (f" / Address2 {lx['addr2']!r}" if lx["addr2"] else "") + f"  [{lx['street_src']}]")
+        for n in street_all_notes(lx):
+            print(f"      {n}")
 
 
 # ---------------------------------------------------------------- 建单页面填写
@@ -434,12 +472,9 @@ def fill_order(page, lx, dg_dir=DG_DIR):
     except Exception as e:
         warns.append(f"Country 设置失败: {str(e).splitlines()[0]}")
     zip_n = norm_zip(lx["zip"], country) if country else lx["zip"]
-    street, num = split_street(lx["addr"], zip_n, lx["city"])
-    num = lx["hno"] or num
-    street_text = f"{street} {num}".strip() if not num or num not in street else street
-    if lx["addr2"]:
-        street_text = f"{street_text}, {lx['addr2']}"
-    for sel, val, label in [(F_STREET, street_text, "Street"),
+    ask_street(lx, lx["no"], lx["addr"], can_skip=False)
+    warns += [n.lstrip("⚠ ") for n in street_all_notes(lx)]
+    for sel, val, label in [(F_STREET, lx["street"], "Street"),
                             (F_ZIP, zip_n, "PCD"),
                             (F_CITY, lx["city"], "City")]:
         if not val:
@@ -622,6 +657,8 @@ def run(args):
     print(f"领星 {len(lx_rows)} 单")
     if not lx_rows:
         return
+    prepare_streets(lx_rows)
+    print_streets(lx_rows)
     res = run_offline(lx_rows, args.html) if args.html else run_live(lx_rows, args)
     out = args.o or default_report_path(args.lingxing)
     write_report(res, out)
