@@ -63,7 +63,16 @@ XL FreightPilot 把上述流程中**可规则化的部分全部自动化**，把
 - **服务器为唯一数据源**，客户端每次运行前自动同步到本地缓存，离线时退回缓存
 - 普通用户提交**变更申请**（新增 / 修改 / 重命名 / 删除 / 通用默认值），由管理员审核后生效（详见下文 [审核流程](#产品参数审核流程)）
 
-### 4. WMS 序列号助手
+### 4. 报价对账（ERP 出库单 → 邮箱里的报价邮件 → 对账 Excel）
+- **读自己的邮箱**：通过飞书开放平台邮件 API 读取本人邮箱（收件箱、已发送和自建文件夹）；OAuth 授权时程序在本机 8080 端口接收回调，用户只需在浏览器点"授权"。App Secret 只在云端，用于换取 token；邮件内容不经过云端
+- **规则优先**：按出库单备注里的 MR 号匹配报价邮件，解析正文表格的"编号"和"运费报价"列；自动去掉回复中引用的原询价邮件
+- **只认我们发出的报价**：报价来源只算和自己邮箱同一域名的发件人（域名从“已发送”里自动识别，不写在代码里）；客户发来的出货通知里也带报价表，但可能抄的是旧价，不算
+- **取最新报价**：同一编号有多封报价时取最新的一封；最新写"待定"则报价留空；多个编号的出库单报价相加并注明
+- **AI 兜底 + 原文校验**：表格读不出（无表格、写法不规整）时交给 LLM，AI 给出的金额必须出现在它引用的原文里，否则标为"需人工确认"
+- **本地缓存**：已读邮件的解析结果缓存在本机，重复对账不再下载
+- 输出：出库时间、编号、出库单号、报价、状态、来源邮件、说明
+
+### 5. WMS 序列号助手
 Tampermonkey 用户脚本，在领星 WMS 批量复核时把扫码得到的逗号分隔序列号实时转换为一行一个、去重，并通过原生 value setter + 派发 `input` 事件与 Vue 组件状态保持同步。
 
 ---
@@ -195,6 +204,9 @@ python create_orders.py 领星导出.xlsx --dry         # 建单：只搜索匹�
 python create_orders.py 领星导出.xlsx               # 建单：搜索 + create + 填写
 python create_orders.py 领星导出.xlsx --html eLogistics.html   # 建单：离线匹配预览
 
+python reconcile.py 领星导出.xlsx                   # 对账：从飞书邮件找报价，生成 <Excel名>_对账结果.xlsx
+python reconcile.py 领星导出.xlsx --eml a.eml b.eml # 对账：离线，用导出的邮件文件代替飞书
+
 python pallet_plan.py 11US2000ZZD-20001 44        # 单独计算装托方案
 ```
 
@@ -220,6 +232,8 @@ python build.py
 | `危险品文件/` | 建单时上传的危险品文件，文件名（不含扩展名）= SKU |
 | `dachser_profile/` | Chrome 登录态（自动生成，不纳入 Git、不打包） |
 | `xlfp_config.json` | 本机授权码（自动生成，不纳入 Git、不打包） |
+| `feishu_token.json` | 本人的飞书邮件授权 token（对账时自动生成，约 2 小时有效，不纳入 Git、不打包） |
+| `feishu_mail_cache.json` | 已读邮件的解析结果缓存（报价邮件的主题、时间、编号和报价；不纳入 Git、不打包，删掉会重新下载） |
 | `license_check.py` | 服务器地址 `SERVER_URL`，测试时可用环境变量 `XLFP_SERVER` 覆盖 |
 
 云端服务的部署与管理见 [`worker/README.md`](worker/README.md)。
@@ -238,7 +252,7 @@ python build.py
 - `地址` → Street 栏：只保留街道 + 门牌号（原顺序）；残留疑似邮编或缺门牌号时提示核对
 
 ### 领星出库单
-领星直接导出即可（Street 由 AI 从 `Address1` / `House No.` / `Address2` 整理，只保留街道 + 门牌号；`Address2` 的楼栋、备注不填，运行时提醒）。用到的列：`Outbound Order No`、`Remark/备注`、`Recipient/收件人`、`Company`、`Country/Region`、`City`、`Post code`、`House No.`、`Address1`、`Address2`、`Province Name`、`Telephone`、`Email`、`Total Qty of SKU`、`SKU 1\nSKU`（多 SKU 时 `SKU 2\nSKU` …）
+领星直接导出即可。对账用到 `Outbound Order No`、`OutboundTime/出库时间`、`Remark/备注`。建单时（Street 由 AI 从 `Address1` / `House No.` / `Address2` 整理，只保留街道 + 门牌号；`Address2` 的楼栋、备注不填，运行时提醒）。用到的列：`Outbound Order No`、`Remark/备注`、`Recipient/收件人`、`Company`、`Country/Region`、`City`、`Post code`、`House No.`、`Address1`、`Address2`、`Province Name`、`Telephone`、`Email`、`Total Qty of SKU`、`SKU 1\nSKU`（多 SKU 时 `SKU 2\nSKU` …）
 
 ---
 
@@ -255,8 +269,10 @@ params_editor.py    产品参数编辑器（提交申请 / 审核 / 历史版本
 params_sync.py      产品参数同步、申请与审核接口
 create_orders.py    建单：报价搜索匹配、创建、填写运输订单、危险品弹窗、文件上传、防锁单
 match_orders.py     领星表读取、地址比对、国家映射
+reconcile.py        对账：出库单 → 报价邮件解析（表格规则 + AI 兜底）→ 对账 Excel
+feishu_mail.py      飞书邮件：OAuth 授权（本机回调）、token 缓存与续期、读邮件
 fetch_dachser.py    match_orders 在线模式的抓取辅助
-worker/             Cloudflare Worker：授权、配额、LLM 中转、产品主数据与审核流
+worker/             Cloudflare Worker：授权、配额、LLM 中转、产品主数据与审核流、飞书 token 换取
 build.py            Nuitka 打包
 xlfp-wms-sn.user.js 领星 WMS 序列号助手（Tampermonkey）
 ```

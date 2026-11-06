@@ -14,11 +14,19 @@
  *     products:v:<版本号>  每个版本的快照（回滚用）
  *     proposal:<id> 修改申请（审完 90 天后自动删除）
  *   MODEL           可选变量，覆盖默认模型
+ *   FEISHU_APP_ID   飞书应用 App ID（变量）        对账功能读飞书邮件用；不放进公开仓库和 exe
+ *   FEISHU_APP_SECRET  飞书应用 App Secret（Secret）
+ *   FEISHU_REDIRECT_URI  可选变量，默认 http://localhost:8080/callback（要和飞书后台「安全设置」一致）
  *
  * 接口（都要带 Authorization: Bearer <授权码>）：
  *   POST /check  → {"enabled": true/false, "message": "...", "name": "张三"}
  *   POST /clean  {"rows": [...]} → {"model": "...", "results": [...], "failed": 0}  询价整理；重试后仍失败的分块不在 results 里
  *   POST /street {"rows": [...]} → 同上                                              建单 Street 整理，Street 规则和询价完全相同
+ *   POST /quote  {"rows": [{"row", "编号", "邮件主题", "邮件正文"}]} → {"model", "results": [{"row", "price", "evidence"}], "failed"}
+ *                对账：规则从报价邮件表格里读不出价格时，让 AI 读邮件找这个编号的报价
+ *   飞书邮件授权（App Secret 只在这里；邮件内容不经过这里，程序直接用 user_access_token 读飞书）：
+ *   POST /feishu/config  → {"app_id", "redirect_uri"}
+ *   POST /feishu/token   {"code"} 或 {"refresh_token"} → 飞书 /authen/v2/oauth/token 的返回（access_token、expires_in …）
  *   产品参数（校验规则在程序里 pallet_plan.validate_product，这里只做格式检查、权限和版本）：
  *   POST /products/get       → {"version", "updated", "by", "data", "role", "pending"}  data 为 null = 还没上传过
  *   POST /products/save      {"base_version", "data", "note"}  管理员直接保存；版本对不上返回 409
@@ -96,6 +104,30 @@ const STREET_SCHEMA = {
   },
 };
 
+// 对账：从报价邮件里找某个编号的报价（我们报给客户的运费，欧元）
+const QUOTE_FIELDS = ["编号", "邮件主题", "邮件正文"];
+const QUOTE_LIMITS = { 邮件正文: 6000 };
+const QUOTE_PROMPT = `你在帮物流公司对账。每一行给出一个订单编号（如 MR12345678）和一封报价邮件（主题和正文）。
+邮件是我们发给客户的运费报价，正文里通常有一张表，"编号"列是订单编号，"运费报价(欧元)"列是报价（如"320欧"）。
+正文后面可能引用了客户原来的询价邮件，那里的报价是空的，不要用引用部分。
+对每一行输出：
+- price：这封邮件里给这个编号的报价金额（欧元，只填数字，如 320 或 320.5）。
+  写的是"待定"、"TBD"、空白、或者这封邮件里根本没有这个编号的报价，就填 null。
+  一个编号对应多个金额且分不清哪个是总报价，也填 null。不要计算、不要猜。
+- evidence：price 出自正文的原文片段（包含金额的那几个字，如"320欧"），price 为 null 时留空。
+按输入的 row 原样返回 row。`;
+const QUOTE_SCHEMA = {
+  type: "ARRAY",
+  items: {
+    type: "OBJECT",
+    properties: { row: { type: "INTEGER" }, price: { type: "NUMBER", nullable: true }, evidence: { type: "STRING" } },
+    required: ["row", "price", "evidence"],
+  },
+};
+
+const FEISHU_TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token";
+const DEFAULT_REDIRECT = "http://localhost:8080/callback";
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -124,7 +156,7 @@ async function authorize(request, env) {
   return { user, token };
 }
 
-const cell = (v) => (v === null || v === undefined ? "" : String(v).trim().slice(0, 500));
+const cell = (v, max = 500) => (v === null || v === undefined ? "" : String(v).trim().slice(0, max));
 
 async function callGemini(env, model, rows, prompt, schema) {
   const res = await fetch(API_URL.replace("{model}", model), {
@@ -160,7 +192,7 @@ async function callWithRetry(env, model, rows, prompt, schema) {
   }
 }
 
-async function clean(request, env, { user, token }, { fields, prompt, schema }) {
+async function clean(request, env, { user, token }, { fields, prompt, schema, limits = {} }) {
   let body;
   try {
     body = await request.json();
@@ -178,7 +210,8 @@ async function clean(request, env, { user, token }, { fields, prompt, schema }) 
   }
   await env.XLFP.put(usageKey, String(used + 1), { expirationTtl: 2 * 86400 });
 
-  const payload = rows.map((r) => ({ row: parseInt(r.row, 10), ...Object.fromEntries(fields.map((k) => [k, cell(r[k])])) }));
+  const payload = rows.map((r) => ({ row: parseInt(r.row, 10),
+                                     ...Object.fromEntries(fields.map((k) => [k, cell(r[k], limits[k])])) }));
   const model = env.MODEL || DEFAULT_MODEL;
   const chunks = [];
   for (let i = 0; i < payload.length; i += CHUNK) chunks.push(payload.slice(i, i + CHUNK));
@@ -365,20 +398,52 @@ async function products(path, request, env, { user, token }) {
   return json({ version: rec.version, data: rec.data });
 }
 
+// ------------------------------------------------------------------ 飞书邮件授权（只换 token，不经手邮件内容）
+
+async function feishu(path, request, env) {
+  if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) return json({ error: "服务器还没有配置飞书应用" }, 503);
+  const redirect_uri = env.FEISHU_REDIRECT_URI || DEFAULT_REDIRECT;
+  if (path === "/feishu/config") return json({ app_id: env.FEISHU_APP_ID, redirect_uri });
+  const b = await readBody(request);
+  const base = { client_id: env.FEISHU_APP_ID, client_secret: env.FEISHU_APP_SECRET };
+  let body;
+  if (typeof b.code === "string" && b.code.trim()) body = { ...base, grant_type: "authorization_code", code: b.code.trim(), redirect_uri };
+  else if (typeof b.refresh_token === "string" && b.refresh_token.trim())
+    body = { ...base, grant_type: "refresh_token", refresh_token: b.refresh_token.trim() };
+  else return json({ error: "缺少 code 或 refresh_token" }, 400);
+  const res = await fetch(FEISHU_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(body),
+  });
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    return json({ error: `飞书返回 HTTP ${res.status}` }, 502);
+  }
+  return json(data, res.ok && data.access_token ? 200 : 400);
+}
+
 const PRODUCT_ROUTES = ["/products/get", "/products/save", "/products/history", "/products/rollback",
                         "/proposals/submit", "/proposals/list", "/proposals/approve", "/proposals/reject",
                         "/proposals/withdraw"];
+const FEISHU_ROUTES = ["/feishu/config", "/feishu/token"];
 
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
-    if (request.method !== "POST" || !["/check", "/clean", "/street", ...PRODUCT_ROUTES].includes(path))
+    if (request.method !== "POST" ||
+        !["/check", "/clean", "/street", "/quote", ...FEISHU_ROUTES, ...PRODUCT_ROUTES].includes(path))
       return json({ error: "not found" }, 404);
     const auth = await authorize(request, env);
     if (auth instanceof Response) return auth;
     if (path === "/check") return json({ enabled: true, message: "", name: auth.user.name || "" });
     if (path === "/clean") return clean(request, env, auth, { fields: FIELDS, prompt: PROMPT, schema: SCHEMA });
     if (path === "/street") return clean(request, env, auth, { fields: STREET_FIELDS, prompt: STREET_PROMPT, schema: STREET_SCHEMA });
+    if (path === "/quote")
+      return clean(request, env, auth, { fields: QUOTE_FIELDS, prompt: QUOTE_PROMPT, schema: QUOTE_SCHEMA, limits: QUOTE_LIMITS });
+    if (FEISHU_ROUTES.includes(path)) return feishu(path, request, env);
     return products(path, request, env, auth);
   },
 };

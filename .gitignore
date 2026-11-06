@@ -17,3 +17,6 @@ pallet_params.json.bak
 pallet_params.json.tmp
 pallet_params.json
 使用说明.txt
+feishu_token.json
+feishu_mail_cache.json
+feishu_mail_cache.tmp
