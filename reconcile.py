@@ -4,6 +4,8 @@
 报价邮件：回复客户"出库询价"的邮件，正文第一张表有"编号"和"运费报价(欧元)"两列（如"320欧"）。
 - 只看邮件自己写的部分，后面引用的原询价邮件（报价是空的）不看。
 - 一个编号有多封报价邮件时取最新的一封；最新的写"待定"等 → 报价留空。
+- 一张出库单对应一个报价：备注里的几个编号在报价表里共用同一个报价格子（同一格写多个编号，
+  或报价格合并了几行）时只算一次。
 - 表格读不出来的（没有表、一格里有多个数字…）交给 AI（开发者服务器 /quote），AI 的结果要能在原文里找到才用。
 - 读过的邮件只把解析结果缓存在本机 feishu_mail_cache.json（不进 Git），下次不用重新下载。
 
@@ -35,7 +37,7 @@ from app_ui import APP_DIR
 MR = re.compile(r"MR\d{8}(?!\d)")
 TOKEN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9\-_./]*[A-Za-z0-9])?")
 CACHE_FILE = APP_DIR / "feishu_mail_cache.json"
-PARSER_VERSION = 2           # 解析规则变了就加 1，旧缓存作废
+PARSER_VERSION = 3           # 解析规则变了就加 1，旧缓存作废
 PENDING = re.compile(r"待定|待报|待确认|未定|再定|TBD|TBC|pending", re.I)
 QUOTE_SUBJECT = "报价"
 AI_TEXT_LIMIT = 6000
@@ -121,10 +123,11 @@ def own_text(t):
 
 
 class _Tables(HTMLParser):
-    """把 HTML 里的表格读成 [表[行[格子文字]]]，colspan 展开成多格。"""
+    """把 HTML 里的表格读成 [表[行[(格子文字, 格子 id)]]]。colspan 展开成多格（后面的为空），
+    rowspan（合并的几行）往下复制同一格子；格子 id = 原格子的 (行, 列)，用来认出"同一个报价格"。"""
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.tables, self.stack, self.text = [], [], []
+        self.tables, self.stack = [], []
 
     def handle_starttag(self, tag, attrs):
         if tag == "table":
@@ -132,24 +135,42 @@ class _Tables(HTMLParser):
         elif tag == "tr" and self.stack:
             self.stack[-1].append([])
         elif tag in ("td", "th") and self.stack and self.stack[-1]:
-            self.cell = [dict(attrs).get("colspan") or "1"]
-            self.stack[-1][-1].append(self.cell)
+            a = dict(attrs)
+            self.stack[-1][-1].append([a.get("colspan") or "1", a.get("rowspan") or "1"])
         elif tag in ("br", "div", "p") and self.stack and self.stack[-1] and self.stack[-1][-1]:
             self.stack[-1][-1][-1].append("\n")
 
+    @staticmethod
+    def _span(v):
+        try:
+            return max(1, min(int(v), 50))
+        except ValueError:
+            return 1
+
     def handle_endtag(self, tag):
         if tag == "table" and self.stack:
-            rows = []
-            for row in self.stack.pop():
-                cells = []
-                for c in row:
-                    txt = re.sub(r"[ \t\xa0]+", " ", "".join(c[1:]))
+            rows, down = [], {}          # down: 列 → [还要往下占几行, 文字, id]
+            for r, row in enumerate(self.stack.pop()):
+                cells, src = [], iter(row)
+                while True:
+                    col = len(cells)
+                    if col in down:
+                        d = down[col]
+                        cells.append((d[1], d[2]))
+                        d[0] -= 1
+                        if d[0] <= 0:
+                            del down[col]
+                        continue
+                    c = next(src, None)
+                    if c is None:
+                        break
+                    txt = re.sub(r"[ \t\xa0]+", " ", "".join(c[2:]))
                     txt = re.sub(r"\s*\n\s*", "\n", txt).strip()
-                    try:
-                        n = max(1, min(int(c[0]), 50))
-                    except ValueError:
-                        n = 1
-                    cells += [txt] + [""] * (n - 1)
+                    cs, rs = self._span(c[0]), self._span(c[1])
+                    for k in range(cs):
+                        cells.append((txt if k == 0 else "", (r, col)))
+                        if rs > 1:
+                            down[col + k] = [rs - 1, txt if k == 0 else "", (r, col)]
                 rows.append(cells)
             self.tables.append(rows)
 
@@ -191,23 +212,24 @@ def parse_price(raw):
 
 
 def quotes_from_tables(h):
-    """{编号: 报价格子原文}：表头有"编号"和"运费报价"的表格，每个编号取第一次出现且报价不为空的格子。"""
+    """{编号: (报价格子原文, 报价格子 id)}：表头有"编号"和"运费报价"的表格，每个编号取第一次出现且报价
+    不为空的格子。几个编号共用一个报价格子（同一格写多个编号 / 报价格合并了几行）时 id 相同。"""
     p = _Tables()
     p.feed(h)
     out = {}
-    for rows in p.tables:
+    for t, rows in enumerate(p.tables):
         c_no = c_price = None
         for row in rows:
-            norm = [re.sub(r"\s+", "", c) for c in row]
+            norm = [re.sub(r"\s+", "", c[0]) for c in row]
             if "编号" in norm and any(c.startswith("运费报价") for c in norm):
                 c_no, c_price = norm.index("编号"), next(i for i, c in enumerate(norm) if c.startswith("运费报价"))
                 continue
             if c_no is None or max(c_no, c_price) >= len(row):
                 continue
-            price = row[c_price].strip()
-            for code in code_tokens(row[c_no]):
+            price, cid = row[c_price][0].strip(), row[c_price][1]
+            for code in code_tokens(row[c_no][0]):
                 if price and code not in out:
-                    out[code] = price
+                    out[code] = (price, f"{t}:{cid[0]}:{cid[1]}")
     return out
 
 
@@ -216,13 +238,14 @@ def parse_mail(subject, sender, date_ms, html_body, text_body):
     rec = {"v": PARSER_VERSION, "d": date_ms, "s": subject, "f": sender, "q": {}}
     mine_html = own_html(html_body) if html_body else ""
     text = (html_to_text(mine_html) if mine_html else own_text(text_body))[:AI_TEXT_LIMIT]
-    for mr, raw in quotes_from_tables(mine_html).items() if mine_html else ():
+    for mr, (raw, gid) in quotes_from_tables(mine_html).items() if mine_html else ():
         st = parse_price(raw)
         if st:
-            rec["q"][mr] = [st[0], st[1], raw[:100]]
+            rec["q"][mr] = [st[0], st[1], raw[:100], gid]
     need = [mr for mr, v in rec["q"].items() if v[0] == "unclear"]
     if QUOTE_SUBJECT in subject:          # 报价邮件里正文提到、表格里没读到报价的编号
-        need += [mr for mr in dict.fromkeys(MR.findall(text.upper())) if mr not in rec["q"]]
+        in_table = {mr for c in rec["q"] for mr in MR.findall(c)}     # 表格写 MR…-aZR 也算有了
+        need += [mr for mr in dict.fromkeys(MR.findall(text.upper())) if mr not in in_table]
     if need:
         rec["ai"], rec["t"] = need, text
     if not rec["q"] and not need:
@@ -381,27 +404,31 @@ def build_index(mails):
 
 
 def match_order(o, by_key, by_mr):
-    """出库单备注 → (对上的编号 key 列表, 要人工确认的说明)。
-    先找备注里和报价表编号完全一致的片段；没有再按 MR 号找（报价表写 MR12345678-aZR 这种）。"""
+    """出库单备注 → (对上的编号 key 列表, 模糊说明)。
+    先找备注里和报价表编号完全一致的片段；没有再按 MR 号找（报价表写 MR12345678-aZR 这种）。
+    一个 MR 号对上报价表里好几个编号时返回全部，并给出模糊说明：它们共用一个报价格就没问题，
+    分开报价的话不知道这张出库单是哪几个，要人工确认（在 reconcile 里判断）。"""
     keys = [code_key(t) for t in o["codes"] if code_key(t) in by_key]
     if keys:
         return list(dict.fromkeys(keys)), ""
+    why = ""
     for mr in o["mrs"]:
         ks = sorted(by_mr.get(mr, ()))
-        if len(ks) == 1:
-            keys.append(ks[0])
-        elif len(ks) > 1:
+        keys += ks
+        if len(ks) > 1:
             names = "、".join(sorted(c for k in ks for c in by_key[k]))
-            return [], f"报价邮件里 {mr} 有多条：{names}，请人工确认"
-    return list(dict.fromkeys(keys)), ""
+            why = f"报价邮件里 {mr} 有多条、分开报价：{names}，请人工确认"
+    return list(dict.fromkeys(keys)), why
 
 
 def lookup(k, mails):
-    """这个编号最新的报价：(状态, 金额, 邮件记录, 原文)；没找到返回 None。
+    """这个编号最新的报价：(状态, 金额, 邮件记录, 原文, 报价格子)；没找到返回 None。
+    报价格子 = (邮件 id, 格子 id)，几个编号共用同一个格子时相同。
     表格里空着的、AI 说没有报价的都不算（可能只是转发、回复里提到）。"""
     found = []
-    for r in mails.values():
+    for mid, r in mails.items():
         v = next((val for c, val in r.get("q", {}).items() if code_key(c) == k), None)
+        cell = (mid, v[3]) if v and len(v) > 3 else (mid, k)
         ai_code = next((c for c in r.get("ai", []) if code_key(c) == k), None)
         a = r.get("aires", {}).get(ai_code) if ai_code else None
         if a and a[0] != "none":
@@ -411,11 +438,11 @@ def lookup(k, mails):
         elif v is None and ai_code:
             v = ["unclear", None, ""]          # 没交给 AI（没授权码 / 调用失败）
         if v:
-            found.append((r.get("d") or 0, v, r))
+            found.append((r.get("d") or 0, v, r, cell))
     if not found:
         return None
-    d, v, r = max(found, key=lambda x: x[0])
-    return v[0], v[1], r, v[2]
+    d, v, r, cell = max(found, key=lambda x: x[0])
+    return v[0], v[1], r, v[2], cell
 
 
 def reconcile(orders, mails):
@@ -425,21 +452,29 @@ def reconcile(orders, mails):
         keys, why = match_order(o, by_key, by_mr)
         shown = " ".join(sorted(by_key[k])[0] for k in keys) or " ".join(o["mrs"] or o["codes"][:2])
         base = [time_text(o["time"]), shown, o["no"]]
-        if why:
-            rows.append(base + [None, "需人工确认", "", "", why])
-            continue
         if not keys:
             st = "未找到报价邮件" if o["codes"] else "备注里没有编号"
             rows.append(base + [None, st, "", "", "" if o["codes"] else o["remark"][:200]])
             continue
-        prices, notes, srcs, states = [], [], [], []
+        # 一张出库单一个报价：几个编号最新的报价落在同一个报价格子里（同一格写多个编号 / 合并格）只算一次
+        cells, missing = {}, False
         for k in keys:
-            name = sorted(by_key[k])[0]
             hit = lookup(k, mails)
             if hit is None:
-                states.append("未找到报价邮件")
+                missing = True
                 continue
-            st, price, rec, raw = hit
+            st, price, rec, raw, cell = hit
+            cells.setdefault(cell, [st, price, rec, raw, []])[4].append(sorted(by_key[k])[0])
+        if why and len(cells) > 1:
+            rows.append(base + [None, "需人工确认", "", "", why])
+            continue
+        if len(cells) > 1:          # 一张出库单应该只有一个报价，分开报价说明有问题
+            parts = "；".join(f"{'+'.join(c[4])}={c[3]}" for c in cells.values())
+            rows.append(base + [None, "需人工确认", "", "", f"多个编号分开报价，一张出库单应只有一个报价：{parts}"])
+            continue
+        prices, notes, srcs, states = [], [], [], ["未找到报价邮件"] if missing else []
+        for st, price, rec, raw, names in cells.values():
+            name = "+".join(names)
             srcs.append(rec)
             if st == "price":
                 prices.append(price)
@@ -451,11 +486,11 @@ def reconcile(orders, mails):
             else:
                 states.append("需人工确认")
                 notes.append(f"{name}：报价写法看不懂{'（' + raw + '）' if raw else ''}")
-        ok = all(s == "已找到" for s in states)
+        ok = bool(states) and all(s == "已找到" for s in states)
         status = "已找到" if ok else next(s for s in states if s != "已找到")
         price = round(sum(prices), 2) if ok else None
-        if len(keys) > 1:
-            notes.insert(0, "多个编号" + ("，报价已相加" if ok else ""))
+        if len(keys) > 1 and ok:
+            notes = [f"多个编号同一个报价：{notes[0]}"]
         src = max(srcs, key=lambda r: r.get("d") or 0) if srcs else None
         when = datetime.fromtimestamp(src["d"] / 1000).strftime("%Y-%m-%d %H:%M") if src and src.get("d") else ""
         rows.append(base + [price, status, when, src["s"] if src else "",
@@ -514,9 +549,8 @@ def run(args):
         _save_cache(mails)
 
     rows = reconcile(orders, quotes)
-    out = Path(args.o) if args.o else path.with_name(f"{path.stem}_对账结果.xlsx")
-    if write_xlsx(rows, out):
-        print(f"已写入 {out}")
+    out = (Path(args.o) if args.o else path.with_name(f"{path.stem}_对账结果.xlsx")).resolve()
+    saved = write_xlsx(rows, out)
     count = {}
     for r in rows:
         count[r[4]] = count.get(r[4], 0) + 1
@@ -524,6 +558,7 @@ def run(args):
     for r in rows:
         if r[4] != "已找到":
             print(f"  [{r[4]}] {r[2]} {r[1]} {r[7]}")
+    print(f"\n对账结果已保存到：{out}" if saved else "\n对账结果没有保存")
 
 
 def main():
