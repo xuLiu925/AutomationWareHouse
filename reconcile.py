@@ -28,7 +28,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import openpyxl
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 
 import app_ui
 import license_check
@@ -44,7 +44,8 @@ AI_TEXT_LIMIT = 6000
 MAX_MESSAGES = 5000          # 一个文件夹最多看多少封，防止无限翻页
 PARALLEL = 4
 
-HEADERS = ["出库时间", "编号", "出库单号", "报价(欧元)", "状态", "报价邮件时间", "报价邮件主题", "说明"]
+HEADERS = ["出库时间", "编号", "出库单号", "报价(欧元)", "状态", "依据", "报价邮件时间", "报价邮件主题", "说明"]
+AI_MARK = "AI 读取："
 
 
 # ------------------------------------------------------------------ 出库单
@@ -422,7 +423,7 @@ def match_order(o, by_key, by_mr):
 
 
 def lookup(k, mails):
-    """这个编号最新的报价：(状态, 金额, 邮件记录, 原文, 报价格子)；没找到返回 None。
+    """这个编号最新的报价：(状态, 金额, 邮件记录, 原文, 报价格子, 是否 AI 读的)；没找到返回 None。
     报价格子 = (邮件 id, 格子 id)，几个编号共用同一个格子时相同。
     表格里空着的、AI 说没有报价的都不算（可能只是转发、回复里提到）。"""
     found = []
@@ -431,18 +432,19 @@ def lookup(k, mails):
         cell = (mid, v[3]) if v and len(v) > 3 else (mid, k)
         ai_code = next((c for c in r.get("ai", []) if code_key(c) == k), None)
         a = r.get("aires", {}).get(ai_code) if ai_code else None
-        if a and a[0] != "none":
+        by_ai = bool(a and a[0] != "none")
+        if by_ai:
             v = a
         elif a and a[0] == "none" and (not v or v[0] == "unclear"):
             v = ["unclear", None, v[2]] if v else None
         elif v is None and ai_code:
             v = ["unclear", None, ""]          # 没交给 AI（没授权码 / 调用失败）
         if v:
-            found.append((r.get("d") or 0, v, r, cell))
+            found.append((r.get("d") or 0, v, r, cell, by_ai))
     if not found:
         return None
-    d, v, r, cell = max(found, key=lambda x: x[0])
-    return v[0], v[1], r, v[2], cell
+    d, v, r, cell, by_ai = max(found, key=lambda x: x[0])
+    return v[0], v[1], r, v[2], cell, by_ai
 
 
 def reconcile(orders, mails):
@@ -454,7 +456,7 @@ def reconcile(orders, mails):
         base = [time_text(o["time"]), shown, o["no"]]
         if not keys:
             st = "未找到报价邮件" if o["codes"] else "备注里没有编号"
-            rows.append(base + [None, st, "", "", "" if o["codes"] else o["remark"][:200]])
+            rows.append(base + [None, st, "", "", "", "" if o["codes"] else o["remark"][:200]])
             continue
         # 一张出库单一个报价：几个编号最新的报价落在同一个报价格子里（同一格写多个编号 / 合并格）只算一次
         cells, missing = {}, False
@@ -463,16 +465,18 @@ def reconcile(orders, mails):
             if hit is None:
                 missing = True
                 continue
-            st, price, rec, raw, cell = hit
+            st, price, rec, raw, cell, by_ai = hit
+            raw = (AI_MARK + raw) if by_ai else raw
             cells.setdefault(cell, [st, price, rec, raw, []])[4].append(sorted(by_key[k])[0])
         if why and len(cells) > 1:
-            rows.append(base + [None, "需人工确认", "", "", why])
+            rows.append(base + [None, "需人工确认", "", "", "", why])
             continue
         if len(cells) > 1:          # 一张出库单应该只有一个报价，分开报价说明有问题
             parts = "；".join(f"{'+'.join(c[4])}={c[3]}" for c in cells.values())
-            rows.append(base + [None, "需人工确认", "", "", f"多个编号分开报价，一张出库单应只有一个报价：{parts}"])
+            rows.append(base + [None, "需人工确认", "", "", "", f"多个编号分开报价，一张出库单应只有一个报价：{parts}"])
             continue
         prices, notes, srcs, states = [], [], [], ["未找到报价邮件"] if missing else []
+        basis = "；".join(c[3] for c in cells.values() if c[3])
         for st, price, rec, raw, names in cells.values():
             name = "+".join(names)
             srcs.append(rec)
@@ -493,7 +497,7 @@ def reconcile(orders, mails):
             notes = [f"多个编号同一个报价：{notes[0]}"]
         src = max(srcs, key=lambda r: r.get("d") or 0) if srcs else None
         when = datetime.fromtimestamp(src["d"] / 1000).strftime("%Y-%m-%d %H:%M") if src and src.get("d") else ""
-        rows.append(base + [price, status, when, src["s"] if src else "",
+        rows.append(base + [price, status, basis, when, src["s"] if src else "",
                             "；".join(notes) if len(keys) > 1 or not ok else ""])
     return rows
 
@@ -505,10 +509,18 @@ def write_xlsx(rows, out):
     ws.append(HEADERS)
     for r in rows:
         ws.append(r)
-    for c, w in zip("ABCDEFGH", (20, 14, 18, 11, 14, 17, 50, 40)):
+    for c, w in zip("ABCDEFGHI", (20, 14, 18, 11, 14, 30, 17, 50, 40)):
         ws.column_dimensions[c].width = w
     for cell in ws[1]:
         cell.font = Font(bold=True)
+    ai_fill = PatternFill("solid", fgColor="FFF2CC")       # AI 读的：整行浅黄，要重点核对
+    bad_fill = PatternFill("solid", fgColor="F8CBAD")      # 没填价格的状态：浅红
+    for row in ws.iter_rows(min_row=2):
+        if str(row[5].value or "").find(AI_MARK) >= 0:
+            for c in row:
+                c.fill = ai_fill
+        if row[4].value != "已找到":
+            row[4].fill = bad_fill
     for r in ws.iter_rows(min_row=2, min_col=4, max_col=4):
         r[0].number_format = "0.00"
     ws.freeze_panes = "A2"
@@ -557,7 +569,7 @@ def run(args):
     print("，".join(f"{k} {v}" for k, v in count.items()))
     for r in rows:
         if r[4] != "已找到":
-            print(f"  [{r[4]}] {r[2]} {r[1]} {r[7]}")
+            print(f"  [{r[4]}] {r[2]} {r[1]} {r[8]}")
     print(f"\n对账结果已保存到：{out}" if saved else "\n对账结果没有保存")
 
 
