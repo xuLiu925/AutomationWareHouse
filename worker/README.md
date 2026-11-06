@@ -5,6 +5,7 @@
 - **授权**：每个同事一个授权码，总开关和每个人的开关都在这里控制
 - **AI 整理中转**：Gemini Key 和提示词只放在这里，exe 里没有
 - **产品托盘参数**：所有人共用一份，带版本历史；同事提交修改申请，管理员审核
+- **飞书邮件授权**（对账功能）：保管飞书应用的 App Secret，把授权 code 换成每个人自己的 token；邮件内容不经过这里
 
 全部在 Cloudflare 网页后台操作，不用装任何工具。免费额度为每天 10 万次请求，用不完。
 
@@ -66,9 +67,28 @@ KV 里的键（程序自动维护，不用手改）：
 - 校验规则在程序里（`pallet_plan.validate_product`），服务器只检查格式和权限。
 - KV 是最终一致的：刚提交的申请可能要几十秒后才出现在审核列表里。
 
-## 五、费用和条款
+## 五、飞书邮件（对账功能）
+
+对账要读每个人自己的飞书邮箱。飞书应用的 App ID / App Secret 只放在 Worker 里，不写进程序和公开仓库。
+
+1. Worker 的 Settings → Variables and Secrets → Add：
+   - Text 变量 `FEISHU_APP_ID`：飞书开发者后台的 App ID
+   - Secret `FEISHU_APP_SECRET`：App Secret
+   - （可选）Text 变量 `FEISHU_REDIRECT_URI`，不加就是 `http://localhost:8080/callback`
+2. 飞书开发者后台：
+   - 「安全设置」→ 重定向 URL 里有 `http://localhost:8080/callback`
+   - 「权限管理」→ 用户身份权限开通：`mail:user_mailbox.message:readonly`、`mail:user_mailbox.message.body:read`、
+     `mail:user_mailbox.message.subject:read`、`mail:user_mailbox.message.address:read`、`mail:user_mailbox.folder:read`（读自建文件夹，报价邮件常被邮箱规则收进去），发布版本并审批通过
+   - 应用的「可用范围」要包含所有要用对账的同事，否则他们授权时会被拒绝
+3. 把新的 `worker.js` 粘贴进去 Deploy。
+
+同事第一次对账时，程序会打开浏览器，他用自己的飞书账号点"授权"即可；token 只存在他自己电脑的 `feishu_token.json`，约 2 小时有效。
+以后在飞书后台开通 `offline_access` 并发布新版本，再把 `feishu_mail.py` 的 `SCOPES` 加上 `offline_access`，程序就会自动续期，不用每次授权。
+
+## 六、费用和条款
 
 - 在欧盟把程序给同事使用，Gemini 必须用**付费服务**（Gemini API 条款："You may use only Paid Services when making API Clients available to users in the European Economic Area"）。
   在 Google AI Studio 的项目里开通 Billing 即可，按用量计费。
 - 建议在 Google Cloud 的 Billing → Budgets 里设一个每月预算提醒（比如 5 欧元）。
 - Worker 发给 Gemini 的只有：地址、House No、Address2、邮编、城市、国家、收件人、公司，询价再加编号和尾板。不包含电话和邮箱。
+- 对账时，只有表格读不出报价的邮件，才会把那封邮件的主题和正文（只含回复本身，去掉引用部分，最多 6000 字）发给 Gemini。

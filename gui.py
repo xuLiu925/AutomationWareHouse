@@ -83,6 +83,8 @@ class App:
         ttk.Radiobutton(r, text="询价（按询价表填 Enquiry）", value="inquiry", variable=self.mode,
                         command=self._mode_changed).pack(side="left", padx=(0, 16))
         ttk.Radiobutton(r, text="建单（按领星出库单找报价并 create）", value="create", variable=self.mode,
+                        command=self._mode_changed).pack(side="left", padx=(0, 16))
+        ttk.Radiobutton(r, text="对账（按出库单从飞书邮件找报价）", value="reconcile", variable=self.mode,
                         command=self._mode_changed).pack(side="left")
 
         self.xlsx = tk.StringVar()
@@ -139,11 +141,22 @@ class App:
 
     # ------------------------------------------------------------ 界面
     def _mode_changed(self):
-        create = self.mode.get() == "create"
-        st = "normal" if create else "disabled"
-        for w in (self.dg_entry, self.dg_btn, self.days_spin):
-            w.configure(state=st)
+        mode = self.mode.get()
+        create, rec = mode == "create", mode == "reconcile"
+        for w in (self.dg_entry, self.dg_btn):
+            w.configure(state="normal" if create else "disabled")
+        self.days_spin.configure(state="normal" if create or rec else "disabled")
+        if rec:
+            self.days_label.configure(text="    邮件范围：最早出库时间再往前")
+            self.days_label2.configure(text="天")
+            self.days.set(60)
+        else:
+            self.days_label.configure(text="    搜索最近")
+            self.days_label2.configure(text="天的报价")
+            self.days.set(30)
+        self.dry_cb.configure(state="disabled" if rec else "normal")
         self.dry_cb.configure(text="只预览（只搜索匹配，不点 create）" if create
+                              else "（对账只读邮件、生成 Excel，不需要预览）" if rec
                               else "只预览（只解析 Excel、看托盘方案，不打开网页）")
 
     def _pick_xlsx(self):
@@ -299,7 +312,7 @@ class App:
         app_ui.clear_stop()
         self.start_btn.configure(state="disabled")
         self.stop_btn.configure(state="normal")
-        self.log.insert("end", f"\n{'=' * 20} 开始{'询价' if mode == 'inquiry' else '建单'}：{xlsx} {'=' * 20}\n")
+        self.log.insert("end", f"\n{'=' * 20} 开始{dict(inquiry='询价', create='建单', reconcile='对账')[mode]}：{xlsx} {'=' * 20}\n")
         self.worker = threading.Thread(target=self._run, args=(mode, xlsx, self.dry.get(), days,
                                                                self.dg_dir.get().strip()), daemon=True)
         self.worker.start()
@@ -323,6 +336,14 @@ class App:
                 dachser_fill.main_batch(argparse.Namespace(
                     xlsx=xlsx, dry=dry, yes=False, url=dachser_fill.START_URL, profile="dachser_profile",
                     chromium_path=None, skip_login_wait=False))
+            elif mode == "reconcile":
+                import feishu_mail
+                import reconcile
+                try:
+                    reconcile.run(argparse.Namespace(xlsx=xlsx, days=days, o=None, eml=None))
+                except feishu_mail.FeishuError as e:
+                    print(f"\n[飞书] {e}\n")
+                    return
             else:
                 import create_orders
                 create_orders.run(argparse.Namespace(
