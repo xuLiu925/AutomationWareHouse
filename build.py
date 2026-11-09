@@ -20,7 +20,10 @@ import os
 import shutil
 import subprocess
 import sys
+import hashlib
+import json
 import zipfile
+from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
@@ -32,7 +35,9 @@ STAGE = ROOT / "build" if IN_PLACE else Path(
 DIST = ROOT / "dist" / NAME
 EXE_TMP = "LiuXuScript.exe"     # 编译时用英文名，打包完再改名
 SOURCES = ["gui.py", "app_ui.py", "license_check.py", "dachser_fill.py", "ai_clean.py", "create_orders.py", "match_orders.py",
-           "pallet_plan.py", "params_editor.py", "params_sync.py", "feishu_mail.py", "reconcile.py"]
+           "pallet_plan.py", "params_editor.py", "params_sync.py", "feishu_mail.py", "reconcile.py", "updater.py"]
+VERSION = datetime.now().strftime("%Y.%m.%d.%H%M")     # 在线更新按这个比较新旧（version.txt）
+RELEASE = ROOT / "dist" / "release"                     # 上传到 R2 的两个文件
 EXTRA_FILES = ["pallet_params.json", "xlfp-wms-sn.user.js"]     # pallet_params.json 不在 Git 里，打包前本机要有
 PACKAGES = ["nuitka", f"playwright=={version('playwright')}", f"openpyxl=={version('openpyxl')}"]
 
@@ -89,6 +94,7 @@ def assemble(built):
     for f in EXTRA_FILES:
         shutil.copy2(ROOT / f, DIST / f)
     (DIST / "危险品文件").mkdir(exist_ok=True)
+    (DIST / "version.txt").write_text(VERSION, encoding="utf-8")
 
 
 def selftest():
@@ -110,15 +116,33 @@ def make_zip():
     return z
 
 
+def make_release(z, notes):
+    """在线更新用的两个文件：压缩包（文件名带版本号）和 latest.json。上传到 R2 见 worker/README.md。"""
+    if RELEASE.exists():
+        shutil.rmtree(RELEASE)
+    RELEASE.mkdir(parents=True)
+    name = f"XL-FreightPilot-{VERSION}.zip"
+    shutil.copy2(z, RELEASE / name)
+    data = (RELEASE / name).read_bytes()
+    info = {"version": VERSION, "file": name, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data),
+            "notes": notes}
+    (RELEASE / "latest.json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
+    return name
+
+
 def main():
+    notes = " ".join(sys.argv[1:]).strip()          # 可选：python build.py 这次更新了什么（更新提示里显示）
     built = compile_exe(build_python())
     assemble(built)
     ok = selftest()
     z = make_zip()
-    print(f"\n完成: {DIST}\n压缩包: {z}")
+    print(f"\n完成: {DIST}  版本 {VERSION}\n压缩包: {z}")
     if not ok:
-        print("⚠ 自检没通过，请看上面的自检结果")
+        print("⚠ 自检没通过，请看上面的自检结果；没有生成在线更新文件")
         return 1
+    name = make_release(z, notes)
+    print(f"在线更新文件: {RELEASE}\n"
+          f"  上传到 R2 存储桶：先传 {name}，再传 latest.json（覆盖旧的）。同事打开程序就会提示更新。")
 
 
 if __name__ == "__main__":

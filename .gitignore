@@ -20,3 +20,5 @@ pallet_params.json
 feishu_token.json
 feishu_mail_cache.json
 feishu_mail_cache.tmp
+_update/
+version.txt
