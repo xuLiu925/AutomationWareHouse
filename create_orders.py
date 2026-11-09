@@ -278,6 +278,50 @@ F_COUNTRY = "select[name$='selCountriesConsignee']"
 F_ZIP = "input[name$='zipContainer:tfiZipConsignee']"
 F_CITY = "input[name$='tabpanel:tfiCityConsignee']"
 F_PHONE_BOOKING = "input[name$='selDeliveryOptions'][value='AT']"
+F_LOADING = "select[name$='loadingParty:select']"
+LOADING_POINT = "Loading point A"      # 必填的 Loading point 下拉框，选文字以此开头的那项
+
+
+F_COLLECTION_DATE = "input[name$='pnlTransportInfo:orderDatePicker']"
+COLLECTION_CUTOFF_HOUR = 11            # 这个钟点及以后建单，Collection date 改成第二天
+
+
+def set_collection_date(page, warns, now=None):
+    """11 点前不动（页面默认就是当天）；11 点及以后填第二天。日期格式跟着页面原值走。"""
+    now = now or dt.datetime.now()
+    if now.hour < COLLECTION_CUTOFF_HOUR:
+        return
+    loc = page.locator(F_COLLECTION_DATE).first
+    if not loc.count():
+        warns.append("没找到 Collection date 输入框，请手动改成第二天")
+        return
+    cur = loc.input_value().strip()
+    fmt = next((f for sep, f in (("/", "%m/%d/%Y"), (".", "%d.%m.%Y"), ("-", "%Y-%m-%d")) if sep in cur),
+               "%m/%d/%Y")      # 页面 datepicker 是 mm/dd/yy（即 11/09/2026）
+    new = (now + dt.timedelta(days=1)).strftime(fmt)
+    if cur != new:
+        set_field(page, F_COLLECTION_DATE, new, "Collection date", warns)
+
+
+def pick_loading_point(page, warns):
+    """Loading point（必填 fineSelect）选 Loading point A；页面没有这个下拉框（旧版页面）就跳过。"""
+    sel = page.locator(F_LOADING).first
+    if not sel.count():
+        return
+    try:
+        text = sel.evaluate(
+            """(e, want) => {
+                const opts = [...e.options];
+                const o = opts.find(o => o.text.trim().toLowerCase().startsWith(want.toLowerCase()))
+                          || opts.find(o => o.value === '-1');
+                return o ? o.text.trim() : null;
+            }""", LOADING_POINT)
+        if not text:
+            warns.append(f"Loading point 下拉框里没有 {LOADING_POINT}，请手动选")
+            return
+        Filler(page).pick_by_text(sel, text)
+    except Exception as e:
+        warns.append(f"选 {LOADING_POINT} 失败: {str(e).splitlines()[0]}")
 
 
 def norm_phone(s):
@@ -445,6 +489,8 @@ def fill_order(page, lx, dg_dir=DG_DIR):
     if not page.locator(F_NAME1).first.is_visible():
         page.locator("#editAddr .tablinks a", has_text="Consignee").first.click(timeout=5000)
         wait_ajax(page)
+    pick_loading_point(page, warns)
+    set_collection_date(page, warns)
 
     # 1) 先选 Phone delivery booking，Contact person 等字段才会出现
     #    （联系人表格上的 inactive 样式选完后也可能一直在，只影响外观，所以不看它；真填不进去 set_field 会提醒）

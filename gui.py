@@ -18,6 +18,7 @@ from tkinter.scrolledtext import ScrolledText
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import app_ui  # noqa: E402
 import license_check  # noqa: E402
+import updater  # noqa: E402
 from app_ui import APP_DIR  # noqa: E402
 
 APP_NAME = "XL FreightPilot"
@@ -120,12 +121,16 @@ class App:
         self.start_btn.pack(side="left")
         self.stop_btn = ttk.Button(btns, text="停止", command=self._stop, state="disabled")
         self.stop_btn.pack(side="left", padx=6)
+        self.update_btn = ttk.Button(btns, text="检查更新", command=lambda: self._check_update(manual=True))
+        self.update_btn.pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right")
         ttk.Button(btns, text="产品参数", command=self._edit_params).pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
 
         ttk.Label(root, text="运行记录：", padding=(10, 8, 10, 0)).pack(anchor="w")
-        ttk.Label(root, text=license_check.NOTICE, foreground="#666", padding=(10, 0, 10, 6)).pack(
+        ver = updater.current_version()
+        ttk.Label(root, text=license_check.NOTICE + (f" · 版本 {ver}" if ver else ""), foreground="#666",
+                  padding=(10, 0, 10, 6)).pack(
             side="bottom", anchor="w")
         self.log = ScrolledText(root, height=20, font=("Microsoft YaHei UI", 9))
         self.log.pack(fill="both", expand=True, padx=10, pady=(0, 6))
@@ -138,6 +143,8 @@ class App:
         root.bind("<Button-1>", self._raise_pending, add="+")
         root.bind("<FocusIn>", self._raise_pending, add="+")
         root.after(100, self._poll)
+        self.updating = False
+        root.after(1500, self._startup_update)
 
     # ------------------------------------------------------------ 界面
     def _mode_changed(self):
@@ -187,8 +194,13 @@ class App:
                         except Exception:
                             self._fallback_ask(*rest)
                     elif kind == "done":
-                        self.start_btn.configure(state="normal")
+                        self.start_btn.configure(state="normal" if not self.updating else "disabled")
                         self.stop_btn.configure(state="disabled")
+                    elif kind == "update":
+                        self._on_update_result(*rest)
+                    elif kind == "restart":
+                        self.root.destroy()
+                        os._exit(0)
                 except Exception:
                     self.log.insert("end", f"\n[界面出错] {traceback.format_exc()}\n")
         finally:
@@ -278,6 +290,69 @@ class App:
         dlg.lift()
         dlg.focus_force()
         # 不用 grab_set（模态）：弹窗一旦被挡住，主窗口会怎么点都没反应
+
+    # ------------------------------------------------------------ 在线更新
+    def _startup_update(self):
+        failed = updater.last_failure()
+        if failed:
+            messagebox.showwarning(APP_NAME, f"上次在线更新没有完成（{failed}），程序还是旧版本。\n"
+                                   f"请重新点\"检查更新\"，或向开发者要新的安装包：{license_check.CONTACT}")
+        self._check_update(manual=False)
+
+    def _check_update(self, manual):
+        """后台问服务器有没有新版本；启动时自动问一次（失败不提示），点按钮时有结果都提示。"""
+        if self.updating:
+            return
+        if manual:
+            self.update_btn.configure(state="disabled")
+
+        def work():
+            try:
+                info, msg = updater.check()
+            except Exception as e:
+                info, msg = None, f"检查更新失败：{e}"
+            self.q.put(("update", info, msg, manual))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_update_result(self, info, msg, manual):
+        self.update_btn.configure(state="normal")
+        if info is None:
+            if manual:
+                messagebox.showinfo(APP_NAME, msg)
+            return
+        if self.worker and self.worker.is_alive():
+            print(f"\n{msg}。当前任务结束后点\"检查更新\"安装。\n")
+            return
+        notes = str(info.get("notes") or "").strip()
+        size = info["size"] / 1024 / 1024
+        if not messagebox.askyesno(APP_NAME, f"{msg}。\n\n{notes + chr(10) + chr(10) if notes else ''}"
+                                   f"现在更新吗？需要下载约 {size:.0f} MB，下载完程序会自动关闭、更新并重新打开。\n"
+                                   f"授权码、登录信息和你的文件都不会受影响。"):
+            return
+        self.updating = True
+        self.start_btn.configure(state="disabled")
+        self.update_btn.configure(state="disabled")
+        threading.Thread(target=self._do_update, args=(info,), daemon=True).start()
+
+    def _do_update(self, info):
+        last = [-1]
+
+        def progress(n, total):
+            pct = n * 100 // max(total, 1)
+            if pct // 10 != last[0]:
+                last[0] = pct // 10
+                print(f"  已下载 {pct}%")
+        try:
+            print(f"\n正在下载新版本 {info['version']} ...")
+            pkg = updater.download(info, progress)
+            print("下载完成，校验通过。程序马上关闭并自动更新，稍等十几秒会重新打开。")
+            updater.install(pkg)
+            self.q.put(("restart",))
+        except Exception as e:
+            print(f"\n[更新失败] {e}\n")
+            self.updating = False
+            self.q.put(("done",))
+            self.q.put(("update", None, f"更新失败：{e}", True))
 
     def _edit_params(self):
         import params_editor
