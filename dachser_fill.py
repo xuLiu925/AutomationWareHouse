@@ -952,7 +952,7 @@ def apply_ai(datas):
     if not datas:
         return ""
     if not ai_clean.available():
-        return "AI 整理：未填写授权码，使用规则识别"
+        return "AI 整理：不可用，使用规则识别"
     print(f"AI 整理中（{len(datas)} 单，约需几秒）…", flush=True)
     res = ai_clean.clean_rows([d["_ai_input"] for d in datas])
     if res is None:

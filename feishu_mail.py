@@ -2,7 +2,7 @@
 
 - 每个人读的是自己的邮箱：第一次（或授权过期后）程序打开浏览器，本人在飞书页面点"同意授权"，
   浏览器跳回 http://localhost:8080/callback，程序在本机 8080 端口接收授权 code。
-- App ID / App Secret 不在程序和仓库里：code 由开发者的服务器（worker/，用授权码调用）换成 token。
+- App ID / App Secret 不在程序和仓库里：code 由开发者的服务器（worker/）换成 token。
 - 换到的 user_access_token 只保存在本机程序目录的 feishu_token.json（不进 Git），约 2 小时有效；
   有 refresh_token（飞书后台开通 offline_access 后才有）时自动续期，否则过期后重新点一次授权。
 - 邮件内容直接从飞书读取，不经过开发者服务器。
@@ -46,7 +46,7 @@ def _server(path, data):
     try:
         status, res = license_check.post(path, data, 30)
     except Exception as e:
-        raise FeishuError(f"连不上授权服务器：{e}") from None
+        raise FeishuError(f"连不上服务器：{e}") from None
     if status != 200 or not isinstance(res, dict):
         why = ""
         if isinstance(res, dict):

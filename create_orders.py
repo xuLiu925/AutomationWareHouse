@@ -238,7 +238,7 @@ def prepare_streets(lx_rows):
         lx["street"], _, lx["street_notes"] = rule_street(inp)
         lx["street_src"], lx["street_alt"] = "规则", ""
     if not ai_clean.available():
-        print("AI 整理：未填写授权码，使用规则识别")
+        print("AI 整理：不可用，使用规则识别")
         return
     print(f"AI 整理 Street 中（{len(lx_rows)} 单，约需几秒）…", flush=True)
     res = ai_clean.clean_streets(inputs)

@@ -2,10 +2,10 @@
 AI 整理询价表里客户乱写的格子（编号混备注、地址里带邮编城市国家、收件人前缀等）。
 
 - 通过开发者的服务器（worker/worker.js，Cloudflare Worker）调用 Google Gemini；
-  Gemini Key 和提示词都只在服务器上，这里只发数据、收结果。用的是授权码（license_check）。
+  Gemini Key 和提示词都只在服务器上，这里只发数据、收结果（license_check.post）。
 - 每一单都发给 AI。只发送整理需要的字段：地址、House No、Address2、邮编、城市、国家、收件人、公司，
   询价再加编号和尾板。不发电话和邮箱。
-- 没有授权码或调用失败时返回 None，调用方改用规则版。
+- 调用失败（含服务器上的每日 AI 次数用完）时返回 None，调用方改用规则版。
 - AI 结果由调用方用规则校验（编号必须出自原文、街道不能含邮编等），不直接信任。
 """
 import license_check
@@ -19,7 +19,7 @@ last_model = ""     # 服务器返回的模型名，打印用
 
 
 def available():
-    return bool(license_check.get_token())
+    return True          # 不再需要授权码；能不能用由服务器决定（失败时改用规则）
 
 
 def _cell(v):

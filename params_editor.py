@@ -3,7 +3,8 @@
 参数以服务器为准（params_sync.py ↔ worker/worker.js）：
 - 管理员：保存 / 删除 / 改通用参数直接生效；"审核"页处理别人的申请；"历史版本"页可回滚
 - 其他人：保存变成"提交审核"，管理员通过后生效；"我的申请"页看进度、撤回
-- 连不上服务器 / 没有授权码：只读，显示本机缓存
+- 连不上服务器：只读，显示本机缓存
+- 管理员 = 带管理员码的电脑（xlfp_config.json，只有管理员电脑上有）；其他人的申请显示 Windows 用户名
 校验规则在 pallet_plan.py（validate_product / validate_defaults），这里只管界面。
 """
 import tkinter as tk
