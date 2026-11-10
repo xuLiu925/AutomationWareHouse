@@ -1,9 +1,9 @@
 """在线更新：从开发者的服务器（Cloudflare Worker + R2，见 worker/README.md）下载新版本并替换程序文件。
 
 - 版本号在打包时写进程序目录的 version.txt（build.py）；直接运行 .py（没有 version.txt）时不检查更新
-- 要有效的授权码才能查到和下载；下载完按 sha256 校验
+- 服务开关开着才能查到和下载；下载完按 sha256 校验
 - 程序运行中的文件不能覆盖：解压到 _update/new 后，启动一个 PowerShell 脚本，等程序退出再复制过去，
-  然后重新打开程序。只覆盖更新包里有的文件：授权码、飞书授权、邮件缓存、Dachser 登录信息、危险品文件
+  然后重新打开程序。只覆盖更新包里有的文件：管理员码、飞书授权、邮件缓存、Dachser 登录信息、危险品文件
   都不在更新包里，不会动；本机已有的 pallet_params.json 也不覆盖（启动询价时会从服务器同步）
 - 复制失败会写 _update/failed.txt，下次打开程序时提示
 """
@@ -68,8 +68,6 @@ def check(timeout=10):
     cur = current_version()
     if not cur:
         return None, "开发版本（直接运行 .py），不检查更新"
-    if not license_check.get_token():
-        return None, "还没有填写授权码，不能检查更新"
     status, data = license_check.post("/update/latest", {}, timeout)
     if status != 200 or not isinstance(data, dict):
         why = (data.get("message") or data.get("error")) if isinstance(data, dict) else ""
@@ -90,8 +88,7 @@ def download(info, progress=None):
     pkg = UPDATE_DIR / "package.zip"
     req = urllib.request.Request(
         license_check.server_url() + "/update/download", data=b"{}",
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {license_check.get_token()}",
-                 "User-Agent": "xl-freightpilot"})
+        headers=license_check.headers())
     h, n, size = hashlib.sha256(), 0, info["size"]
     try:
         with urllib.request.urlopen(req, timeout=60) as r, open(pkg, "wb") as f:

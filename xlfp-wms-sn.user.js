@@ -1,49 +1,42 @@
 // ==UserScript==
 // @name         XL FreightPilot · WMS 序列号助手
 // @namespace    https://xlfp.xuliu00925.workers.dev/
-// @version      1.0
+// @version      1.1
 // @description  领星 WMS 复核/验货：在批量序列号框里扫二维码时，把逗号自动换成换行，并去掉重复的序列号。Developed by Xu Liu（刘旭）· xuliu00925@gmail.com
 // @author       Xu Liu（刘旭）
 // @match        https://wms.xlwms.com/*
 // @grant        GM_xmlhttpRequest
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @grant        GM_registerMenuCommand
 // @connect      xlfp.xuliu00925.workers.dev
 // @run-at       document-idle
 // ==/UserScript==
 
 /*
- * 授权：和 XL FreightPilot 用同一个授权码（Tampermonkey 图标 → "设置授权码"），
- * 用之前联网问开发者的服务器能不能用；授权码无效、被停用或连不上时不做转换，
- * WMS 本身照常可以手动使用。脚本只改序列号输入框里的文字，不调用 WMS 的接口。
+ * 服务开关：和 XL FreightPilot 一样，用之前联网问开发者的服务器服务是否开着（不用授权码）；
+ * 暂停或连不上时不做转换，WMS 本身照常可以手动使用。脚本只改序列号输入框里的文字，不调用 WMS 的接口。
  */
 (function () {
   "use strict";
 
   const SERVER = "https://xlfp.xuliu00925.workers.dev";
   const CONTACT = "xuliu00925@gmail.com";
-  const RECHECK_MS = 60 * 60 * 1000;   // 授权通过后 1 小时内不再重复验证
+  const RECHECK_MS = 60 * 60 * 1000;   // 服务开着时 1 小时内不再重复问
   const TEXTAREA = ".xl-input-batch-popover textarea";   // 勾选"支持批量复核"后序列号的多行框
   const SEP = /[,，]/;
 
-  const DISABLED = `该软件已由开发者关闭使用，如需使用请联系开发者：${CONTACT}`;
-  const NO_TOKEN = `还没有填写授权码：点浏览器右上角 Tampermonkey 图标 →"设置授权码"。没有授权码请联系开发者：${CONTACT}`;
-  const OFFLINE = `无法连接授权服务器，暂时不能自动转换逗号，请检查网络。如一直无法使用，请联系开发者：${CONTACT}`;
+  const DISABLED = `服务暂停使用，请联系刘旭（${CONTACT}）`;
+  const OFFLINE = `无法连接服务器，暂时不能自动转换逗号，请检查网络。如一直无法使用，请联系刘旭（${CONTACT}）`;
 
   let auth = { ok: false, msg: "", at: 0 };
   let checking = null;
-  let warned = null;   // 当前这个框已经提示过授权问题，不再每个字都提示
+  let warned = null;   // 当前这个框已经提示过，不再每个字都提示
 
   function check() {
-    const token = String(GM_getValue("token", "")).trim();
-    if (!token) return Promise.resolve({ ok: false, msg: NO_TOKEN });
     return new Promise((resolve) => {
       const fail = () => resolve({ ok: false, msg: OFFLINE });
       GM_xmlhttpRequest({
         method: "POST",
         url: SERVER + "/check",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        headers: { "Content-Type": "application/json" },
         data: "{}",
         timeout: 10000,
         onload(r) {
@@ -133,14 +126,6 @@
       ensureAuth();   // 打开多行框时提前验证，扫码时不用等
     }
   }, true);
-
-  GM_registerMenuCommand("设置授权码", () => {
-    const token = prompt("请输入 XL FreightPilot 授权码：", GM_getValue("token", ""));
-    if (token === null) return;
-    GM_setValue("token", token.trim());
-    auth = { ok: false, msg: "", at: 0 };
-    ensureAuth().then((a) => toast(a.ok ? "授权码有效，可以使用。" : a.msg, !a.ok));
-  });
 
   ensureAuth();
 })();

@@ -55,3 +55,12 @@ def clear_stop():
 
 def stop_requested():
     return _stop.is_set()
+
+
+def duration(sec):
+    """秒数 → "3 分 12 秒" 这种写法，用在运行记录的计时里。"""
+    if sec < 60:
+        return f"{sec:.1f} 秒"
+    m, s = divmod(int(round(sec)), 60)
+    h, m = divmod(m, 60)
+    return f"{h} 小时 {m} 分 {s} 秒" if h else f"{m} 分 {s} 秒"

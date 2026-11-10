@@ -1,15 +1,17 @@
 /**
  * XL FreightPilot 服务端（Cloudflare Worker）：授权开关 + AI 整理中转 + 产品托盘参数（带审核）。
  *
- * Gemini Key 和提示词只放在这里，exe 里没有；exe 用每个同事自己的授权码调用。
+ * Gemini Key 和提示词只放在这里，exe 里没有。同事不用授权码：程序每次运行前问 /check 总开关，
+ * 关掉或连不上都不能用；请求头 X-XLFP-User 带 Windows 用户名（URL 编码），只用来显示谁提交了参数修改。
  *
  * 绑定（Worker → Settings → Variables / Bindings）：
  *   GEMINI_API_KEY  密钥（Secret）
  *   XLFP            KV 命名空间，里面的键：
- *     config        {"enabled": true, "message": ""}            总开关，缺省为开启
- *     user:<授权码>  {"name": "张三", "enabled": true, "daily": 100}  每个同事一条；daily = 每天最多整理几张表，0 或不写 = 不限
- *                   加 "role": "admin" = 管理员（产品参数直接保存、审核别人的申请）
- *     usage:<日期>:<授权码>  程序自动写入的当天调用次数（2 天后自动过期）
+ *     config        {"enabled": true, "message": "", "ai_daily": 500}  总开关（缺省开启，关掉后所有接口都拒绝）；
+ *                   ai_daily = 全软件每天最多调用几次 AI，0 或不写 = 不限
+ *     user:<授权码>  {"name": "刘旭", "role": "admin"}  可选：带这个码的程序是管理员（产品参数直接保存、审核申请）；
+ *                   也可写 "enabled": false 停用、"daily": 100 单独限次。没带码 = 普通用户
+ *     usage:<日期>:all / usage:<日期>:<码或 win:用户名>  程序自动写入的当天 AI 调用次数（2 天后自动过期）
  *     products      当前产品参数 {"version", "updated", "by", "note", "data": <pallet_params.json 的内容>}
  *     products:v:<版本号>  每个版本的快照（回滚用）
  *     proposal:<id> 修改申请（审完 90 天后自动删除）
@@ -19,7 +21,7 @@
  *   FEISHU_REDIRECT_URI  可选变量，默认 http://localhost:8080/callback（要和飞书后台「安全设置」一致）
  *   RELEASES        R2 存储桶（可选）：在线更新用，放 latest.json 和压缩包（见 README 在线更新）
  *
- * 接口（都要带 Authorization: Bearer <授权码>）：
+ * 接口（管理员带 Authorization: Bearer <授权码>，其他人不用带）：
  *   POST /check  → {"enabled": true/false, "message": "...", "name": "张三"}
  *   POST /clean  {"rows": [...]} → {"model": "...", "results": [...], "failed": 0}  询价整理；重试后仍失败的分块不在 results 里
  *   POST /street {"rows": [...]} → 同上                                              建单 Street 整理，Street 规则和询价完全相同
@@ -54,7 +56,7 @@ const CHUNK = 5;             // 一次请求 Gemini 最多多少行（拆小了�
 const PARALLEL = 10;         // 同时最多几个 Gemini 请求
 const MAX_ROWS = 400;        // 一次最多接收多少行，防止滥用
 const RETRIES = 2;           // 一块失败后再试几次
-const DISABLED_MESSAGE = "该软件已由开发者关闭使用，如需使用请联系开发者：xuliu00925@gmail.com";
+const DISABLED_MESSAGE = "服务暂停使用，请联系刘旭（xuliu00925@gmail.com）";
 
 const STREET_FIELDS = ["地址", "House No", "Address2", "邮编", "城市", "国家", "收件人", "公司名称"];
 const FIELDS = ["编号", "是否需要尾板", ...STREET_FIELDS];
@@ -203,16 +205,31 @@ async function getJSON(env, key) {
   }
 }
 
-/** 校验授权码和开关。返回 {user, token} 或一个错误 Response。 */
+/** 程序发来的 Windows 用户名（URL 编码，头 X-XLFP-User），用来显示谁提交了参数修改。 */
+function winUser(request) {
+  let name = request.headers.get("X-XLFP-User") || "";
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    /* 原样用 */
+  }
+  return name.replace(/[\u0000-\u001f]/g, "").trim().slice(0, 40);
+}
+
+/** 开关 + 身份。返回 {user, token, config} 或一个错误 Response。
+ *  同事不用授权码：没带码（或码不在 KV 里）= 普通用户，身份 = Windows 用户名。
+ *  带了 KV 里有的码 = 那条 user 记录（"role": "admin" 才是管理员）。总开关关掉时所有接口都拒绝。 */
 async function authorize(request, env) {
-  const m = (request.headers.get("Authorization") || "").match(/^Bearer\s+(\S+)$/);
-  const token = m ? m[1] : "";
-  const user = token ? await getJSON(env, `user:${token}`) : null;
-  if (!user) return json({ enabled: false, message: "授权码无效，请联系开发者获取：xuliu00925@gmail.com" }, 401);
   const config = (await getJSON(env, "config")) || {};
   if (config.enabled === false) return json({ enabled: false, message: config.message || DISABLED_MESSAGE }, 403);
-  if (user.enabled === false) return json({ enabled: false, message: user.message || DISABLED_MESSAGE }, 403);
-  return { user, token };
+  const m = (request.headers.get("Authorization") || "").match(/^Bearer\s+(\S+)$/);
+  const known = m ? await getJSON(env, `user:${m[1]}`) : null;
+  if (known) {
+    if (known.enabled === false) return json({ enabled: false, message: known.message || DISABLED_MESSAGE }, 403);
+    return { user: known, token: m[1], config };
+  }
+  const name = winUser(request) || "同事";
+  return { user: { name, role: "user" }, token: `win:${name}`, config };
 }
 
 const cell = (v, max = 500) => (v === null || v === undefined ? "" : String(v).trim().slice(0, max));
@@ -251,7 +268,7 @@ async function callWithRetry(env, model, rows, prompt, schema) {
   }
 }
 
-async function clean(request, env, { user, token }, { fields, prompt, schema, limits = {} }) {
+async function clean(request, env, { user, token, config }, { fields, prompt, schema, limits = {} }) {
   let body;
   try {
     body = await request.json();
@@ -261,13 +278,18 @@ async function clean(request, env, { user, token }, { fields, prompt, schema, li
   const rows = Array.isArray(body?.rows) ? body.rows : [];
   if (!rows.length || rows.length > MAX_ROWS) return json({ error: `行数必须在 1 到 ${MAX_ROWS} 之间` }, 400);
 
-  // 每日次数限制（按表计）
-  const usageKey = `usage:${new Date().toISOString().slice(0, 10)}:${token}`;
-  const used = parseInt((await env.XLFP.get(usageKey)) || "0", 10);
-  if (user.daily > 0 && used >= user.daily) {
-    return json({ error: `今天的 AI 整理次数已用完（${user.daily} 次），明天再试或联系开发者` }, 429);
-  }
-  await env.XLFP.put(usageKey, String(used + 1), { expirationTtl: 2 * 86400 });
+  // 每日次数限制（按请求计；一张表 / 一次对账通常是一次）：config.ai_daily = 全软件每天总共多少次，
+  // user.daily = 某个授权码自己的上限；0 或不写 = 不限。超了返回 429，程序改用规则。
+  const today = new Date().toISOString().slice(0, 10);
+  const allKey = `usage:${today}:all`, userKey = `usage:${today}:${token}`;
+  const [allUsed, userUsed] = (await Promise.all([env.XLFP.get(allKey), env.XLFP.get(userKey)]))
+    .map((v) => parseInt(v || "0", 10));
+  if (config.ai_daily > 0 && allUsed >= config.ai_daily)
+    return json({ error: `今天的 AI 次数已用完（全软件每天 ${config.ai_daily} 次），这次改用规则处理` }, 429);
+  if (user.daily > 0 && userUsed >= user.daily)
+    return json({ error: `今天的 AI 次数已用完（${user.daily} 次），这次改用规则处理` }, 429);
+  await Promise.all([env.XLFP.put(allKey, String(allUsed + 1), { expirationTtl: 2 * 86400 }),
+                     env.XLFP.put(userKey, String(userUsed + 1), { expirationTtl: 2 * 86400 })]);
 
   const payload = rows.map((r) => ({ row: parseInt(r.row, 10),
                                      ...Object.fromEntries(fields.map((k) => [k, cell(r[k], limits[k])])) }));
@@ -486,7 +508,7 @@ async function feishu(path, request, env) {
 
 // ------------------------------------------------------------------ 在线更新
 // R2 存储桶（绑定名 RELEASES）里放：latest.json（build.py 生成）和它指向的压缩包。
-// 只有授权码有效的程序才能查到和下载，地址固定，不怕共享服务器的临时链接变化。
+// 总开关开着时程序才能查到和下载，地址固定，不怕共享服务器的临时链接变化。
 async function update(path, env) {
   if (!env.RELEASES) return json({ version: null, message: "服务器还没有配置在线更新" });
   const obj = await env.RELEASES.get("latest.json");

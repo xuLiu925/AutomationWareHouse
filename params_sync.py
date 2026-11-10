@@ -21,8 +21,6 @@ class ServerError(Exception):
 
 def call(path, data=None, timeout=15):
     """POST 到服务器，成功返回 JSON；任何失败抛 ServerError（文字给人看）。"""
-    if not license_check.get_token():
-        raise ServerError(license_check.NO_TOKEN_MESSAGE)
     try:
         status, res = license_check.post(path, data or {}, timeout)
     except Exception:

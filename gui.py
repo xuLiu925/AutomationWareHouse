@@ -9,10 +9,11 @@ import os
 import queue
 import sys
 import threading
+import time
 import tkinter as tk
 import traceback
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -123,7 +124,6 @@ class App:
         self.stop_btn.pack(side="left", padx=6)
         self.update_btn = ttk.Button(btns, text="检查更新", command=lambda: self._check_update(manual=True))
         self.update_btn.pack(side="right", padx=(6, 0))
-        ttk.Button(btns, text="授权码", command=self._ask_token).pack(side="right")
         ttk.Button(btns, text="产品参数", command=self._edit_params).pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
 
@@ -327,7 +327,7 @@ class App:
         size = info["size"] / 1024 / 1024
         if not messagebox.askyesno(APP_NAME, f"{msg}。\n\n{notes + chr(10) + chr(10) if notes else ''}"
                                    f"现在更新吗？需要下载约 {size:.0f} MB，下载完程序会自动关闭、更新并重新打开。\n"
-                                   f"授权码、登录信息和你的文件都不会受影响。"):
+                                   f"登录信息和你的文件都不会受影响。"):
             return
         self.updating = True
         self.start_btn.configure(state="disabled")
@@ -358,26 +358,11 @@ class App:
         import params_editor
         params_editor.open_editor(self.root)
 
-    def _ask_token(self):
-        """填写/修改授权码，保存到 xlfp_config.json。返回是否填了。"""
-        t = simpledialog.askstring(APP_NAME, f"请输入授权码（向开发者获取：{license_check.CONTACT}）：",
-                                   initialvalue=license_check.get_token(), parent=self.root)
-        if not t or not t.strip():
-            return False
-        try:
-            license_check.save_token(t)
-        except OSError as e:
-            messagebox.showerror(APP_NAME, f"授权码保存失败：{e}")
-            return False
-        return True
-
     # ------------------------------------------------------------ 运行
     def _start(self):
         xlsx = self.xlsx.get().strip().strip('"')
         if not xlsx or not Path(xlsx).is_file():
             messagebox.showwarning(APP_NAME, "请先选择 Excel 文件")
-            return
-        if not license_check.get_token() and not self._ask_token():
             return
         mode = self.mode.get()
         try:
@@ -393,8 +378,9 @@ class App:
         self.worker.start()
 
     def _run(self, mode, xlsx, dry, days, dg_dir):
+        t0 = time.monotonic()
         try:
-            print("正在验证授权 ...")
+            print("正在连接服务器 ...")
             ok, why = license_check.check()
             if not ok:
                 print(why + "\n")
@@ -425,9 +411,9 @@ class App:
                     lingxing=xlsx, dry=dry, html=None, days=days, dg_dir=dg_dir or str(create_orders.DG_DIR),
                     o=None, url=create_orders.START_URL, profile="dachser_profile", chromium_path=None,
                     yes=False))
-            print("\n完成。\n")
+            print(f"\n完成，用时 {app_ui.duration(time.monotonic() - t0)}。\n")
         except SystemExit as e:
-            print(f"\n{e}\n")
+            print(f"\n{e}（用时 {app_ui.duration(time.monotonic() - t0)}）\n")
         except BaseException as e:
             print(f"\n[出错] {e}\n{traceback.format_exc()}")
             s = str(e).lower()
@@ -465,7 +451,7 @@ def selftest():
         import openpyxl  # noqa: F401
         import pallet_plan
         pallet_plan.plan_pallets("11US2000ZZD-20001", 44)
-        lic = license_check.check()      # 只报告，不影响自检结果（授权文件可能还没放好）
+        lic = license_check.check()      # 只报告，不影响自检结果（可能没联网）
         out.write_text(f"OK browser={r} app_dir={APP_DIR} license={lic}\n", encoding="utf-8")
     except BaseException:
         out.write_text("FAIL\n" + traceback.format_exc(), encoding="utf-8")
