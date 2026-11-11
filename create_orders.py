@@ -169,33 +169,52 @@ def open_history(page):
     wait_ajax(page)
 
 
-def _submit_search(page, order_no, days):
-    """填条件、点 Search，并等到结果表真的被换掉（不管 Search 是 ajax 还是整页刷新）。"""
+def _submit_search(page, order_no, days, start=None, end=None):
+    """填条件、点 Search，并等到结果表真的被换掉（不管 Search 是 ajax 还是整页刷新）。
+    日期默认从 days 天前到今天，也可以直接给 start / end（date）。返回结果表是否真的换掉了。"""
     open_history(page)
     wait_ajax(page, 200)
     page.add_style_tag(content="#ui-datepicker-div { display: none !important; }")
-    today = dt.date.today()
+    end = end or dt.date.today()
+    start = start or end - dt.timedelta(days=days)
     page.evaluate("""([f, t]) => {
         const a = document.querySelector("form.filter-form input[name='fromDate']");
         const b = document.querySelector("form.filter-form input[name='toDate']");
         if (a) a.value = f; if (b) b.value = t;
         // 给当前结果表打标记，搜索完成后旧表会被替换掉，标记随之消失
         document.querySelectorAll('table.specialTable').forEach(t => t.setAttribute('data-old-result', '1'));
-    }""", [(today - dt.timedelta(days=days)).strftime("%m/%d/%Y"), today.strftime("%m/%d/%Y")])
+    }""", [start.strftime("%m/%d/%Y"), end.strftime("%m/%d/%Y")])
     page.fill("form.filter-form input[name='orderNumber']", order_no)
     page.click("form.filter-form input[name='filterButton']")
+    replaced = True
     try:
         page.wait_for_function("() => !document.querySelector('table[data-old-result]')", timeout=30000)
     except Exception:
+        replaced = False
         print("  [WARN] 30 秒内没等到新的搜索结果")
     page.wait_for_load_state("domcontentloaded")
     wait_ajax(page, 500)
+    return replaced
 
 
-def search(page, order_no, days):
-    """在列表页按单号搜索（日期从 days 天前到今天），返回整理后的行。"""
+def page_feedback(page):
+    """页面上的提示/错误文字（Wicket feedback），没有返回 ""。"""
+    try:
+        return page.evaluate("""() => [...document.querySelectorAll(
+            "[class*='feedback'] li, [class*='feedbackPanel'] span, .errorlevel, .error, .alert")]
+            .map(e => e.innerText.trim()).filter(Boolean).slice(0, 3).join(' / ')""") or ""
+    except Exception:
+        return ""
+
+
+def search(page, order_no, days, start=None, end=None, strict=False):
+    """在列表页按单号搜索（日期从 days 天前到今天，或 start~end），返回整理后的行。
+    strict：结果表没换掉（搜索没完成）就报错，不拿旧表凑数。"""
     for attempt in range(2):
-        _submit_search(page, order_no, days)
+        replaced = _submit_search(page, order_no, days, start, end)
+        if strict and not replaced:
+            fb = page_feedback(page)
+            raise RuntimeError("Dachser 搜索 30 秒没出结果" + (f"：{fb}" if fb else ""))
         try:
             cur = page.input_value("form.filter-form input[name='orderNumber']", timeout=10000).strip()
         except Exception:
