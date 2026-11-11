@@ -11,6 +11,8 @@
 匹配规则（以备注为准）:
     备注里的 MR 编号（多个 MR 时全部都要出现）包含在 Dachser 单号里即算匹配，
     例如备注 MR12345678 能匹配 Dachser 单号 MR12345678-a+b。备注里没有 MR 编号时用整段备注匹配。
+    这样对不上时反过来找：Dachser 单号原样出现在备注里也算匹配（询价只把编号格开头的编号填进
+    Dachser，例如备注 "ZR-1104-1,插队拣货" 对 Dachser 单号 ZR-1104-1，"MR12345678，MR12345679" 对 MR12345678）。
     已经 created 的报价不算。
     - 唯一匹配: 自动点击 create；地址和领星不一致只打印提醒，不拦截
     - 多个匹配: 列出来，由你在浏览器里自己点 create
@@ -31,7 +33,8 @@ from app_ui import APP_DIR, ask  # noqa: E402
 from match_orders import MR, check_address, read_lingxing  # noqa: E402
 import ai_clean  # noqa: E402
 from dachser_fill import (START_URL, Filler, _launch, _quotation_link, ask_street, merge_ai_street,  # noqa: E402
-                          norm_country, norm_zip, open_quotation, rule_street, street_all_notes, street_input)
+                          norm_country, norm_zip, open_quotation, parse_order_no, rule_street, street_all_notes,
+                          street_input)
 
 # 在页面里读出报价表的每一行（含 create 按钮状态）
 JS_ROWS = r"""() => {
@@ -83,20 +86,56 @@ def matches(order, keys):
     return all(re.search(re.escape(k) + r"(?!\d)", order, re.I) for k in keys)
 
 
+def in_remark(order, remark):
+    """反查：Dachser 单号原样出现在备注里。询价只把编号格开头的编号填进 Dachser（parse_order_no），
+    备注却可能带着其他文字或第二个 MR 编号。单号前后不能紧挨字母数字，也不能是 "-1" 这种接续
+    （ZR-1104 不配 ZR-1104-1、1104-1 不配 ZR-1104-1）；至少 3 位。"""
+    order = re.sub(r"\s+", "", order or "")
+    if len(order) < 3:
+        return False
+    pat = (r"(?<![A-Za-z0-9])(?<![A-Za-z0-9][-_/.])" + re.escape(order)
+           + r"(?![A-Za-z0-9])(?![-_/.][A-Za-z0-9])")
+    remark = remark or ""
+    return any(re.search(pat, s, re.I) for s in (remark, re.sub(r"\s+", "", remark)))
+
+
+def find_hits(remark, rows):
+    """返回 (匹配的行, 是否反查得到)。先按备注关键字正向匹配，对不上再反查。"""
+    keys = remark_keys(remark)
+    hits = [r for r in rows if matches(r["order"], keys)] if keys else []
+    if hits:
+        return hits, False
+    return [r for r in rows if in_remark(r["order"], remark)], True
+
+
+def search_term(remark):
+    """搜索框里填的词：第一个 MR 编号；没有 MR 时和询价一样取开头的编号（parse_order_no）。"""
+    keys = remark_keys(remark)
+    if not keys:
+        return ""
+    if MR.search(remark):
+        return keys[0]
+    no = parse_order_no(remark.strip())[0]
+    return no if len(no) >= 3 else keys[0]
+
+
 def classify(lx, rows):
     """返回 (状态, 可点的候选行列表, 说明)。"""
-    keys = remark_keys(lx["remark"])
-    if not keys:
+    if not remark_keys(lx["remark"]):
         return "备注为空", [], ""
-    hits = [r for r in rows if matches(r["order"], keys)]
+    hits, reverse = find_hits(lx["remark"], rows)
     open_ = [r for r in hits if r["can_create"]]
+    via = "按 Dachser 单号反查备注匹配；" if reverse and hits else ""
     if not hits:
         return "Dachser未找到", [], ""
     if not open_:
-        return "已创建过", [], f"{len(hits)} 条匹配，都已 created 或没有 create 按钮"
+        return "已创建过", [], f"{via}{len(hits)} 条匹配，都已 created 或没有 create 按钮"
     if len(open_) > 1:
-        return "多个匹配", open_, f"{len(open_)} 条可 create，需手动选择"
-    return "唯一匹配", open_, "；".join(check_address(lx, open_[0]))
+        return "多个匹配", open_, f"{via}{len(open_)} 条可 create，需手动选择"
+    note = "；".join(check_address(lx, open_[0]))
+    if reverse:
+        note = f"按 Dachser 单号 {open_[0]['order']} 反查备注匹配" + (f"；{note}" if note else "")
+    return "唯一匹配", open_, note
 
 
 def fmt_row(r):
@@ -169,10 +208,10 @@ def search(page, order_no, days):
     return [to_dz(r) for r in rows]
 
 
-def find_rows(page, keys, days):
+def find_rows(page, remark, days):
     """先用单号搜；搜不到（Dachser 可能只做精确搜索，组合单号会漏）就清空单号、取整个日期范围再本地筛。"""
-    rows = search(page, keys[0], days)
-    if any(matches(r["order"], keys) for r in rows):
+    rows = search(page, search_term(remark), days)
+    if find_hits(remark, rows)[0]:
         return rows
     return search(page, "", days)
 
@@ -614,13 +653,12 @@ def run_live(lx_rows, args):
                 print("\n已停止。")
                 break
             print(f"\n===== [{n}/{len(lx_rows)}] {lx['no']}  备注 {lx['remark']!r} =====")
-            keys = remark_keys(lx["remark"])
-            if not keys:
+            if not remark_keys(lx["remark"]):
                 print("  结果: 备注为空，跳过")
                 res.append((lx, "备注为空", [], "", "跳过"))
                 continue
             try:
-                rows = find_rows(page, keys, args.days)
+                rows = find_rows(page, lx["remark"], args.days)
             except Exception as e:
                 msg = str(e).splitlines()[0]
                 print(f"  [ERR] 搜索失败: {msg}")
