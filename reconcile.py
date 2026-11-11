@@ -56,8 +56,9 @@ AI_TEXT_LIMIT = 6000
 MAX_MESSAGES = 5000          # 一个文件夹最多看多少封，防止无限翻页
 PARALLEL = 4
 
-HEADERS = ["出库时间", "编号", "出库单号", "报价(欧元)", "状态", "依据", "客户确认价(欧元)",
+HEADERS = ["出库时间", "编号", "出库单号", "报价(欧元)", "状态", "依据", "客户确认价(欧元)", "成本价(欧元)",
            "报价邮件时间", "报价邮件主题", "出货通知时间", "说明"]
+NOTE = HEADERS.index("说明")
 SKIP_HEADERS = ["出库时间", "出库单号", "物流渠道", "判断", "原因", "备注"]
 AI_MARK = "AI 读取："
 NOTICE_MARK = "客户确认："
@@ -727,8 +728,8 @@ def _classify_rest(o, n, has_inq):
     return "不明", "没有报价、出货通知和询价，物流渠道也看不出来（多半是快递）"
 
 
-def reconcile(orders, quotes, notices=(), inquiries=()):
-    """返回 (对账行 [(值列表, {标记})], 未对账行)。"""
+def reconcile(orders, quotes, notices=(), inquiries=(), costs=None):
+    """返回 (对账行 [(值列表, {标记})], 未对账行)。costs = dachser_cost.costs() 的结果，None = 没查成本。"""
     by_key, by_mr = build_index(quotes)
     nidx = index_notices(notices)
     inq = {code_key(c) for r in inquiries for c in r["iq"]} | {m for r in inquiries for c in r["iq"] for m in MR.findall(c)}
@@ -771,9 +772,12 @@ def reconcile(orders, quotes, notices=(), inquiries=()):
             notes.append(o["remark"][:200])
         if q["changed"]:
             flags.add("changed")
+        cost, cost_note = (costs or {}).get(o["no"], (None, ""))
+        if cost_note:
+            notes.append("成本：" + cost_note)
         shown = " ".join(q["codes"]) or " ".join(o["mrs"] or (n["codes"] if n else []) or o["codes"][:2])
         src = q["src"]
-        rows.append(([time_text(o["time"]), shown, o["no"], price, status, basis, cust,
+        rows.append(([time_text(o["time"]), shown, o["no"], price, status, basis, cust, cost,
                       day(src.get("d")) if src else "", src["s"] if src else "",
                       day(n["r"].get("d")) if n else "", "；".join(x for x in notes if x)], flags))
         used.append(q["cells"])
@@ -789,7 +793,7 @@ def reconcile(orders, quotes, notices=(), inquiries=()):
             v, flags = rows[i]
             others = "、".join(rows[j][0][2] for j in idxs if j != i)
             v[3], v[4] = None, "需人工确认"
-            v[10] = "；".join(x for x in (v[10], f"和出库单 {others} 用的是同一个报价，可能重复收费") if x)
+            v[NOTE] = "；".join(x for x in (v[NOTE], f"和出库单 {others} 用的是同一个报价，可能重复收费") if x)
             flags.add("shared")
     return rows, skipped
 
@@ -801,7 +805,7 @@ def write_xlsx(rows, skipped, out):
     ws.append(HEADERS)
     for r, _ in rows:
         ws.append(r)
-    for c, w in zip("ABCDEFGHIJK", (20, 14, 18, 11, 16, 30, 13, 17, 40, 17, 50)):
+    for c, w in zip("ABCDEFGHIJKL", (20, 14, 18, 11, 16, 30, 13, 13, 17, 40, 17, 50)):
         ws.column_dimensions[c].width = w
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -823,8 +827,8 @@ def write_xlsx(rows, skipped, out):
             row[3].fill = chg_fill
         if "shared" in flags:
             row[2].fill = shared_fill
-    for r in ws.iter_rows(min_row=2, min_col=4, max_col=7):
-        r[0].number_format = r[3].number_format = "0.00"
+    for r in ws.iter_rows(min_row=2, min_col=4, max_col=8):
+        r[0].number_format = r[3].number_format = r[4].number_format = "0.00"
     ws.freeze_panes = "A2"
     ws2 = wb.create_sheet("未对账")
     ws2.append(SKIP_HEADERS)
@@ -856,7 +860,22 @@ def run(args):
         raise SystemExit("Excel 里没有出库单")
     times = [t for t in (parse_time(o["time"]) for o in orders) if t]
     since = (min(times) if times else datetime.now() - timedelta(days=31)) - timedelta(days=args.days)
-    print(f"出库单 {len(orders)} 张；搜索 {since:%Y-%m-%d} 之后的邮件")
+    print(f"出库单 {len(orders)} 张；搜索 {since:%Y-%m-%d} 之后的邮件和 Dachser 网站询价")
+
+    # 成本价：Dachser 网站询价的 Price（先做，需要登录时一开始就登）
+    costs = None
+    if getattr(args, "no_cost", False) or (args.eml and not getattr(args, "cost_html", None)):
+        print("成本价：这次不查")
+    else:
+        import dachser_cost
+        try:
+            print("成本价：打开 Dachser 读网站询价（只读，不点任何按钮）…")
+            drows = dachser_cost.fetch_rows(since, getattr(args, "cost_html", None))
+            costs = dachser_cost.costs(orders, drows)
+            print(f"成本价：Dachser 网站询价 {len(drows)} 条，对上 {sum(v[0] is not None for v in costs.values())} 张出库单")
+        except Exception as e:
+            print(f"⚠ 读 Dachser 网站询价失败，成本价不填：{str(e).splitlines()[0] if str(e) else e!r}")
+    t_cost = time.monotonic()
 
     if args.eml:
         mails, own = {str(p): mail_from_eml(p) for p in args.eml}, ""
@@ -883,7 +902,7 @@ def run(args):
         _save_cache(mails)
     t_ai = time.monotonic()
 
-    rows, skipped = reconcile(orders, quotes, notices, inquiries)
+    rows, skipped = reconcile(orders, quotes, notices, inquiries, costs)
     out = (Path(args.o) if args.o else path.with_name(f"{path.stem}_对账结果.xlsx")).resolve()
     saved = write_xlsx(rows, skipped, out)
     count = {}
@@ -901,9 +920,9 @@ def run(args):
             print(f"  [改发快递] {r[1]} {r[4]}")
     for r, _ in rows:
         if r[4] != "已找到":
-            print(f"  [{r[4]}] {r[2]} {r[1]} {r[10]}")
+            print(f"  [{r[4]}] {r[2]} {r[1]} {r[NOTE]}")
     dur, now = app_ui.duration, time.monotonic()
-    print(f"用时：读邮件 {dur(t_mail - t0)}，AI {dur(t_ai - t_mail)}，对账和生成 Excel {dur(now - t_ai)}，共 {dur(now - t0)}")
+    print(f"用时：查成本 {dur(t_cost - t0)}，读邮件 {dur(t_mail - t_cost)}，AI {dur(t_ai - t_mail)}，对账和生成 Excel {dur(now - t_ai)}，共 {dur(now - t0)}")
     print(f"\n对账结果已保存到：{out}" if saved else "\n对账结果没有保存")
 
 
@@ -913,6 +932,8 @@ def main():
     ap.add_argument("--days", type=int, default=60, help="从最早的出库时间再往前找多少天的邮件（默认 60）")
     ap.add_argument("-o", help="输出文件，默认 <Excel名>_对账结果.xlsx")
     ap.add_argument("--eml", nargs="+", help="离线：用导出的 .eml 邮件代替飞书")
+    ap.add_argument("--no-cost", action="store_true", help="不打开 Dachser 查成本价")
+    ap.add_argument("--cost-html", help="离线：用保存的 My enquiries 列表页代替 Dachser 网站查成本价")
     ap.add_argument("--code", help="不在这台电脑上授权时：飞书授权后跳转的地址（或其中的 code），几分钟内有效")
     run(ap.parse_args())
 
