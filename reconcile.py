@@ -870,8 +870,8 @@ def run(args):
         import dachser_cost
         try:
             print("成本价：打开 Dachser 读网站询价（只读，不点任何按钮）…")
-            drows = dachser_cost.fetch_rows(since, getattr(args, "cost_html", None))
-            costs = dachser_cost.costs(orders, drows)
+            drows, earliest = dachser_cost.fetch_rows(since, getattr(args, "cost_html", None))
+            costs = dachser_cost.costs(orders, drows, earliest)
             print(f"成本价：Dachser 网站询价 {len(drows)} 条，对上 {sum(v[0] is not None for v in costs.values())} 张出库单")
         except Exception as e:
             print(f"⚠ 读 Dachser 网站询价失败，成本价不填：{str(e).splitlines()[0] if str(e) else e!r}")
