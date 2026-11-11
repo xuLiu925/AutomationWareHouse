@@ -86,7 +86,7 @@ class App:
                         command=self._mode_changed).pack(side="left", padx=(0, 16))
         ttk.Radiobutton(r, text="建单（按领星出库单找报价并 create）", value="create", variable=self.mode,
                         command=self._mode_changed).pack(side="left", padx=(0, 16))
-        ttk.Radiobutton(r, text="对账（按出库单从飞书邮件找报价）", value="reconcile", variable=self.mode,
+        ttk.Radiobutton(r, text="对账（飞书邮件找报价，Dachser 网站查成本）", value="reconcile", variable=self.mode,
                         command=self._mode_changed).pack(side="left")
 
         self.xlsx = tk.StringVar()
