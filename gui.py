@@ -183,40 +183,60 @@ class App:
         self.log.delete("1.0", "end")
         self._show_welcome()
 
+    BANNER_H = 110             # 和 assets/scene_*.png 的高度一致（图 2000×110，靠右铺满横幅）
+    BANNER_TEXT_RIGHT = 390    # 右边这么宽留给货车、月亮和日期，字不写进去
+    ROAD_H = 18                # 插画底部路面的高度（tools/make_art.py 的 road_y）
+
     def _build_banner(self, root):
-        """运行记录框顶部的固定横幅（小插画 + 问候 + 每日一句），不随日志滚动。"""
-        bg = "#f8fafc"
-        self.banner = tk.Frame(root, bg=bg)
-        self.banner.pack(fill="x")
-        tk.Frame(root, bg="#e2e8f0", height=1).pack(fill="x")      # 横幅和日志之间的细线
-        self.b_pic = tk.Label(self.banner, bg=bg)                  # 左：按时段的小插画
-        self.b_pic.pack(side="left", padx=(10, 14), pady=6)
-        txt = tk.Frame(self.banner, bg=bg)                         # 中：问候 + 每日一句
-        txt.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=8)
-        self.b_hello = tk.Label(txt, bg=bg, anchor="w", fg="#1e3a8a",
-                                font=("Microsoft YaHei UI", 12, "bold"))
-        self.b_hello.pack(fill="x")
-        self.b_daily = tk.Label(txt, bg=bg, anchor="w", justify="left", fg="#334155",
-                                font=("Microsoft YaHei UI", 9), wraplength=480)
-        self.b_daily.pack(fill="x", pady=(3, 0))
-        self.b_date = tk.Label(self.banner, bg=bg, fg="#94a3b8",   # 右下角：日期
-                               font=("Microsoft YaHei UI", 8))
-        self.b_date.place(relx=1.0, rely=1.0, x=-10, y=-5, anchor="se")
-        # 句子换行时给右下角的日期留出位置
-        txt.bind("<Configure>", lambda e: self.b_daily.configure(wraplength=max(200, e.width - 110)))
+        """运行记录框顶部的固定横幅：按时段的插画铺满整条，问候、每日一句、日期直接写在图上；不随日志滚动。"""
+        c = self.banner = tk.Canvas(root, height=self.BANNER_H, highlightthickness=0, bd=0)
+        c.pack(fill="x")
+        self.b_img = c.create_image(0, 0, anchor="ne")
+        self.b_hello = c.create_text(16, 14, anchor="nw", font=("Microsoft YaHei UI", 12, "bold"))
+        self.b_daily = c.create_text(16, 44, anchor="nw", font=("Microsoft YaHei UI", 9))
+        self.b_date = c.create_text(0, 0, anchor="e", font=("Microsoft YaHei UI", 9),
+                                    fill=welcome.DATE_COLOR)
+        c.bind("<Configure>", lambda e: self._layout_banner(e.width))
+
+    def _layout_banner(self, width):
+        c = self.banner
+        c.coords(self.b_img, width, 0)                 # 图靠右：货车总在右边，左边天空够长
+        c.coords(self.b_date, width - 16, self.BANNER_H - self.ROAD_H / 2)     # 日期在路面正中，右下角
+        c.itemconfigure(self.b_daily, width=max(200, width - 16 - self.BANNER_TEXT_RIGHT))
+        self._fit_daily()
+
+    def _fit_daily(self):
+        """每日一句不能压到路面：放不下先缩小一号，还放不下就换成自带的短句。"""
+        c = self.banner
+        limit = self.BANNER_H - self.ROAD_H - 2
+        for attempt in range(2):
+            for size in (9, 8):
+                c.itemconfigure(self.b_daily, font=("Microsoft YaHei UI", size))
+                box = c.bbox(self.b_daily)
+                if not box or box[3] <= limit:
+                    return
+            if attempt == 0 and c.itemcget(self.b_daily, "text") == self.daily:
+                c.itemconfigure(self.b_daily, text=getattr(self, "_fallback", None) or self._new_fallback())
+            else:
+                return
 
     def _show_welcome(self):
         """刷新横幅：按时段的插画 + 问候 + 每日一句。出错就算了，不影响使用。"""
         try:
+            kind = welcome.scene_kind()
+            hello_fg, daily_fg, bg = welcome.BANNER_COLORS[kind]
+            c = self.banner
+            c.configure(bg=bg)
             f = welcome.scene_file()
             if f and getattr(self, "_scene_path", None) != f:
-                self._scene = tk.PhotoImage(file=str(f)).subsample(4)   # 要留着引用，不然图片会被回收
+                self._scene = tk.PhotoImage(file=str(f))       # 要留着引用，不然图片会被回收
                 self._scene_path = f
-                self.b_pic.configure(image=self._scene)
-            self.b_hello.configure(text=welcome.hello())
-            self.b_daily.configure(text=self.daily or getattr(self, "_fallback", None)
-                                   or self._new_fallback())
-            self.b_date.configure(text=welcome.date_line())
+                c.itemconfigure(self.b_img, image=self._scene)
+            c.itemconfigure(self.b_hello, text=welcome.hello(), fill=hello_fg)
+            c.itemconfigure(self.b_daily, fill=daily_fg,
+                            text=self.daily or getattr(self, "_fallback", None) or self._new_fallback())
+            c.itemconfigure(self.b_date, text=welcome.date_line())
+            self._fit_daily()
         except Exception:
             pass
 
