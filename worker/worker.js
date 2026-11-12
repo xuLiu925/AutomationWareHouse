@@ -15,6 +15,8 @@
  *     products      当前产品参数 {"version", "updated", "by", "note", "data": <pallet_params.json 的内容>}
  *     products:v:<版本号>  每个版本的快照（回滚用）
  *     proposal:<id> 修改申请（审完 90 天后自动删除）
+ *     greeting:<日期>  当天的「每日一句」（第一次被问到时让 Gemini 写，3 天后自动过期）
+ *     greeting:recent  最近几天的每日一句（让 AI 别重复）
  *   MODEL           可选变量，覆盖默认模型
  *   FEISHU_APP_ID   飞书应用 App ID（变量）        对账功能读飞书邮件用；不放进公开仓库和 exe
  *   FEISHU_APP_SECRET  飞书应用 App Secret（Secret）
@@ -32,6 +34,8 @@
  *   POST /aftersales/reply {"rows": [{"row", "Dachser 邮件主题", "Dachser 最新邮件", "客户回复", "我的补充"}]}
  *                → results: [{"row", "german", "chinese", "missing"}]
  *                售后助手（单独的项目，不在 exe 里）：只起草，不发邮件；每次调用计入 daily 次数
+ *   POST /greeting → {"text": "...", "date": "2026-11-12"}  程序欢迎画面的每日一句（德国日期，所有人当天一样；
+ *                每天只在第一次被问到时调 1 次 Gemini，计入 ai_daily）；失败返回 502，程序用自带的句子
  *   飞书邮件授权（App Secret 只在这里；邮件内容不经过这里，程序直接用 user_access_token 读飞书）：
  *   POST /feishu/config  → {"app_id", "redirect_uri"}
  *   POST /feishu/token   {"code"} 或 {"refresh_token"} → 飞书 /authen/v2/oauth/token 的返回（access_token、expires_in …）
@@ -234,14 +238,14 @@ async function authorize(request, env) {
 
 const cell = (v, max = 500) => (v === null || v === undefined ? "" : String(v).trim().slice(0, max));
 
-async function callGemini(env, model, rows, prompt, schema) {
+async function callGemini(env, model, rows, prompt, schema, temperature = 0) {
   const res = await fetch(API_URL.replace("{model}", model), {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: prompt }] },
       contents: [{ role: "user", parts: [{ text: JSON.stringify(rows) }] }],
-      generationConfig: { temperature: 0, responseMimeType: "application/json", responseSchema: schema },
+      generationConfig: { temperature, responseMimeType: "application/json", responseSchema: schema },
     }),
   });
   if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -308,6 +312,42 @@ async function clean(request, env, { user, token, config }, { fields, prompt, sc
   const ok = parts.filter(Boolean);
   if (!ok.length) return json({ error: "Gemini 调用失败，稍后再试" }, 502);
   return json({ model, results: ok.flat(), failed: parts.length - ok.length });
+}
+
+// ------------------------------------------------------------------ 每日一句
+
+const GREETING_PROMPT = `你是一个物流小工具里「每日一句」的作者。读者是在德国做跨境物流的中国同事，每天用这个软件给 Dachser 卡车询价、建单、对账。
+请写一段轻松幽默、让人会心一笑的中文：两句话，用一个换行分成两行，加起来不超过 60 个汉字。
+可以拿工作里的日常开玩笑：托盘、纸箱、邮编、门牌号、报价、货车、尾板、周一周五、咖啡、德国天气、加班……也可以结合当天的日期、星期、季节或节日。
+要温暖、积极，像同事间的玩笑；不要点名，不提任何公司或客户名字，不涉及政治、宗教、性别、地域，不挖苦人，不用 emoji 和颜文字。
+不要和 recent 里的句子重复或句式相近。`;
+const GREETING_SCHEMA = { type: "OBJECT", properties: { text: { type: "STRING" } }, required: ["text"] };
+const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+async function greeting(env, { config }) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric",
+    month: "2-digit", day: "2-digit", weekday: "short" }).formatToParts(new Date()).map((p) => [p.type, p.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  const saved = await env.XLFP.get(`greeting:${date}`);
+  if (saved) return json({ text: saved, date });
+  const allKey = `usage:${new Date().toISOString().slice(0, 10)}:all`;
+  const used = parseInt((await env.XLFP.get(allKey)) || "0", 10);
+  if (config.ai_daily > 0 && used >= config.ai_daily) return json({ error: "今天的 AI 次数已用完" }, 429);
+  await env.XLFP.put(allKey, String(used + 1), { expirationTtl: 2 * 86400 });
+  const recent = (await getJSON(env, "greeting:recent")) || [];
+  const wd = WEEKDAYS[new Date(`${date}T12:00:00Z`).getUTCDay()];
+  try {
+    const out = await callGemini(env, env.MODEL || DEFAULT_MODEL, { date, weekday: wd, recent }, GREETING_PROMPT,
+                                 GREETING_SCHEMA, 1);
+    const text = String(out?.text || "").trim().slice(0, 200);
+    if (!text) throw new Error("空的每日一句");
+    await env.XLFP.put(`greeting:${date}`, text, { expirationTtl: 3 * 86400 });
+    await env.XLFP.put("greeting:recent", JSON.stringify([text, ...recent].slice(0, 14)));
+    return json({ text, date });
+  } catch (e) {
+    console.error(String(e.message || e));
+    return json({ error: "每日一句生成失败" }, 502);
+  }
 }
 
 // ------------------------------------------------------------------ 产品参数 + 审核
@@ -537,11 +577,12 @@ export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
     if (request.method !== "POST" ||
-        !["/check", "/clean", "/street", "/quote", "/aftersales/read", "/aftersales/reply", ...FEISHU_ROUTES, ...UPDATE_ROUTES, ...PRODUCT_ROUTES].includes(path))
+        !["/check", "/greeting", "/clean", "/street", "/quote", "/aftersales/read", "/aftersales/reply", ...FEISHU_ROUTES, ...UPDATE_ROUTES, ...PRODUCT_ROUTES].includes(path))
       return json({ error: "not found" }, 404);
     const auth = await authorize(request, env);
     if (auth instanceof Response) return auth;
     if (path === "/check") return json({ enabled: true, message: "", name: auth.user.name || "" });
+    if (path === "/greeting") return greeting(env, auth);
     if (path === "/clean") return clean(request, env, auth, { fields: FIELDS, prompt: PROMPT, schema: SCHEMA });
     if (path === "/street") return clean(request, env, auth, { fields: STREET_FIELDS, prompt: STREET_PROMPT, schema: STREET_SCHEMA });
     if (path === "/quote")

@@ -127,7 +127,7 @@ def authorize():
                 msg = "这个授权链接已经过期（程序重新开始过）。请使用运行记录里最新的授权链接。"
             elif q.get("code"):
                 got["code"] = q["code"][0]
-                msg = "授权成功，可以关闭这个页面，回到 XL FreightPilot。"
+                msg = "授权成功，可以关闭这个页面，回到 FreightPilot。"
             else:
                 got["error"] = q.get("error", ["未知错误"])[0]
                 msg = f"授权没有完成：{html.escape(got['error'])}"

@@ -20,9 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import app_ui  # noqa: E402
 import license_check  # noqa: E402
 import updater  # noqa: E402
-from app_ui import APP_DIR  # noqa: E402
+import welcome  # noqa: E402
+from app_ui import APP_DIR, app_path  # noqa: E402
 
-APP_NAME = "XL FreightPilot"
+APP_NAME = "FreightPilot"          # 窗口和弹窗上显示的名字（exe 文件名仍是 XL FreightPilot.exe，在线更新靠它）
 APP_TITLE = f"{APP_NAME} — Freight Quotation & Order Automation"
 
 
@@ -72,6 +73,10 @@ class App:
         self.q = queue.Queue()
         self.worker = None
         root.title(APP_TITLE)
+        try:
+            root.iconbitmap(default=str(app_path("assets/xlfp.ico")))     # default：弹窗也用这个图标
+        except Exception:
+            pass
         root.geometry("820x640")
         root.minsize(640, 480)
 
@@ -125,15 +130,17 @@ class App:
         self.update_btn = ttk.Button(btns, text="检查更新", command=lambda: self._check_update(manual=True))
         self.update_btn.pack(side="right", padx=(6, 0))
         ttk.Button(btns, text="产品参数", command=self._edit_params).pack(side="right", padx=(6, 0))
-        ttk.Button(btns, text="清空记录", command=lambda: self.log.delete("1.0", "end")).pack(side="right", padx=6)
+        ttk.Button(btns, text="清空记录", command=self._clear_log).pack(side="right", padx=6)
 
         ttk.Label(root, text="运行记录：", padding=(10, 8, 10, 0)).pack(anchor="w")
-        ver = updater.current_version()
-        ttk.Label(root, text=license_check.NOTICE + (f" · 版本 {ver}" if ver else ""), foreground="#666",
+        ttk.Label(root, text=license_check.NOTICE, foreground="#666",
                   padding=(10, 0, 10, 6)).pack(
             side="bottom", anchor="w")
         self.log = ScrolledText(root, height=20, font=("Microsoft YaHei UI", 9))
         self.log.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        self.daily = None          # 服务器上的每日一句（后台取，取到前先用自带的）
+        self._show_welcome()
+        threading.Thread(target=lambda: self.q.put(("greeting", welcome.daily_line())), daemon=True).start()
 
         self._mode_changed()
         app_ui.set_ask_handler(self._ask_from_worker)
@@ -165,6 +172,45 @@ class App:
         self.dry_cb.configure(text="只预览（只搜索匹配，不点 create）" if create
                               else "（对账只读邮件、生成 Excel，不需要预览）" if rec
                               else "只预览（只解析 Excel、看托盘方案，不打开网页）")
+
+    def _clear_log(self):
+        self.log.delete("1.0", "end")
+        self._show_welcome()
+
+    def _show_welcome(self):
+        """运行记录第一条：按时段的插画 + 问候 + 每日一句。出错就算了，不影响使用。"""
+        try:
+            log = self.log
+            log.tag_configure("w_center", justify="center")
+            log.tag_configure("w_hello", font=("Microsoft YaHei UI", 15, "bold"), foreground="#1e3a8a",
+                              spacing1=8, justify="center")
+            log.tag_configure("w_joke", font=("Microsoft YaHei UI", 11), foreground="#334155", spacing1=4,
+                              justify="center")
+            log.tag_configure("w_meta", font=("Microsoft YaHei UI", 9), foreground="#94a3b8", spacing1=8,
+                              spacing3=10, justify="center")
+            f = welcome.scene_file()
+            if f:
+                self._scene = tk.PhotoImage(file=str(f))      # 要留着引用，不然图片会被回收
+                log.image_create("1.0", image=self._scene, pady=6)
+                log.insert("end", "\n")
+                log.tag_add("w_center", "1.0", "2.0")
+            log.insert("end", welcome.hello() + "\n", "w_hello")
+            log.insert("end", (self.daily or welcome.fallback_line()) + "\n", ("w_joke", "w_daily"))
+            log.insert("end", welcome.date_line(ai=bool(self.daily)) + "\n\n", ("w_meta", "w_date"))
+        except Exception:
+            pass
+
+    def _set_daily(self, text):
+        """每日一句取到了：记下来，欢迎画面还在的话把句子换掉。"""
+        if not text:
+            return
+        self.daily = text
+        for tag, value, tags in (("w_daily", text + "\n", ("w_joke", "w_daily")),
+                                 ("w_date", welcome.date_line(ai=True) + "\n\n", ("w_meta", "w_date"))):
+            r = self.log.tag_ranges(tag)
+            if r:
+                self.log.delete(r[0], r[-1])
+                self.log.insert(r[0], value, tags)
 
     def _pick_xlsx(self):
         f = filedialog.askopenfilename(title="选择 Excel", filetypes=[("Excel", "*.xlsx *.xlsm"), ("所有文件", "*.*")])
@@ -198,6 +244,8 @@ class App:
                         self.stop_btn.configure(state="disabled")
                     elif kind == "update":
                         self._on_update_result(*rest)
+                    elif kind == "greeting":
+                        self._set_daily(*rest)
                     elif kind == "restart":
                         self.root.destroy()
                         os._exit(0)
@@ -438,7 +486,7 @@ class App:
 
 
 def selftest():
-    """打包后检查：能否找到 Chrome、启动浏览器（不登录）。用法: "XL FreightPilot.exe" --selftest"""
+    """打包后检查：能否找到 Chrome、启动浏览器（不登录）。用法: "FreightPilot.exe" --selftest"""
     out = APP_DIR / "selftest.txt"
     try:
         from playwright.sync_api import sync_playwright
@@ -460,6 +508,11 @@ def selftest():
 def main():
     if "--selftest" in sys.argv:
         return selftest()
+    try:
+        if updater.migrate_name():        # 用改名前的 XL FreightPilot.exe 打开的：已换成 FreightPilot.exe
+            return
+    except Exception:
+        pass
     root = tk.Tk()
     try:
         ttk.Style().theme_use("vista")

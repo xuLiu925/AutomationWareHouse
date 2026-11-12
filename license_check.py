@@ -23,8 +23,7 @@ CONTACT = "xuliu00925@gmail.com"
 DISABLED_MESSAGE = f"服务暂停使用，请联系刘旭（{CONTACT}）"
 OFFLINE_MESSAGE = (f"无法连接服务器，暂时不能使用。\n请检查网络后重试。\n"
                    f"如一直无法使用，请联系刘旭（{CONTACT}）")
-NOTICE = (f"XL FreightPilot · Developed by Xu Liu（刘旭）· {CONTACT}"
-          f" · 需联网使用开发者服务器（服务开关、AI、更新）")
+NOTICE = f"使用有问题？请联系软件开发者邮箱：{CONTACT}"      # 窗口底部的一行字
 
 
 def server_url():

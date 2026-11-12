@@ -6,11 +6,16 @@
   然后重新打开程序。只覆盖更新包里有的文件：管理员码、飞书授权、邮件缓存、Dachser 登录信息、危险品文件
   都不在更新包里，不会动；本机已有的 pallet_params.json 也不覆盖（启动询价时会从服务器同步）
 - 复制失败会写 _update/failed.txt，下次打开程序时提示
+- 改名过渡：程序从 XL FreightPilot.exe 改名为 FreightPilot.exe。旧版只认旧名字，所以更新包里还带一份
+  旧名字的同样程序（build.py LEGACY_EXE）；migrate_name() 把旧名字启动的换成新名字（见下）
 """
 import hashlib
 import os
 import shutil
 import subprocess
+import sys
+import threading
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -19,7 +24,8 @@ from pathlib import Path
 import license_check
 from app_ui import APP_DIR
 
-EXE_NAME = "XL FreightPilot.exe"
+EXE_NAME = "FreightPilot.exe"
+LEGACY_EXE = "XL FreightPilot.exe"      # 改名前的 exe（旧版的快捷方式都指向它）
 VERSION_FILE = APP_DIR / "version.txt"
 UPDATE_DIR = APP_DIR / "_update"
 FAILED_FILE = UPDATE_DIR / "failed.txt"
@@ -150,3 +156,76 @@ def last_failure():
         return None
     FAILED_FILE.unlink(missing_ok=True)
     return text or "未知原因"
+
+
+# ------------------------------------------------------------------ 改名过渡
+
+FIX_SHORTCUTS_PS1 = r"""param([string]$Old, [string]$New, [string[]]$Dirs)
+$sh = New-Object -ComObject WScript.Shell
+if (-not $Dirs) {
+    $Dirs = @([Environment]::GetFolderPath("Desktop"), [Environment]::GetFolderPath("CommonDesktopDirectory"),
+              [Environment]::GetFolderPath("StartMenu"), [Environment]::GetFolderPath("CommonStartMenu"),
+              (Join-Path $env:APPDATA "Microsoft\Internet Explorer\Quick Launch"))
+}
+foreach ($d in $Dirs) {
+    if (-not $d -or -not (Test-Path -LiteralPath $d)) { continue }
+    Get-ChildItem -LiteralPath $d -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            $l = $sh.CreateShortcut($_.FullName)
+            if ($l.TargetPath -ieq $Old) {
+                $l.TargetPath = $New
+                $l.IconLocation = "$New,0"
+                $l.Save()
+                if ($_.BaseName -ieq "XL FreightPilot") {
+                    Rename-Item -LiteralPath $_.FullName -NewName "FreightPilot.lnk" -ErrorAction SilentlyContinue
+                }
+            }
+        } catch {}
+    }
+}
+"""
+
+
+def fix_shortcuts(old, new, dirs=None):
+    """把桌面、开始菜单、任务栏里指向旧 exe 的快捷方式改指新 exe（名字叫 XL FreightPilot 的顺便改名）。
+    只动目标正好是旧 exe 的快捷方式；没权限改的（公共桌面）就算了。"""
+    UPDATE_DIR.mkdir(exist_ok=True)
+    ps1 = UPDATE_DIR / "fix_shortcuts.ps1"
+    ps1.write_text(FIX_SHORTCUTS_PS1, encoding="utf-8-sig")
+    cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ps1),
+           "-Old", str(old), "-New", str(new)] + (["-Dirs", *map(str, dirs)] if dirs else [])
+    try:
+        subprocess.run(cmd, creationflags=0x08000000, timeout=60, cwd=str(UPDATE_DIR))
+    except Exception:
+        pass
+    ps1.unlink(missing_ok=True)
+
+
+def _remove_later(path, tries=30):
+    """旧 exe 的进程刚退出时可能还删不掉，等一会儿再试。"""
+    for _ in range(tries):
+        try:
+            path.unlink()
+            return
+        except FileNotFoundError:
+            return
+        except OSError:
+            time.sleep(0.5)
+
+
+def migrate_name(argv0=None):
+    """程序启动时最先调用。返回 True = 这次是旧名字启动、已经换成新名字打开了，调用方直接退出。
+    - 用 XL FreightPilot.exe 启动（旧快捷方式，或旧版在线更新后重启）且新 exe 在：改快捷方式，打开 FreightPilot.exe
+    - 用 FreightPilot.exe 启动且旧 exe 还在：后台删掉旧 exe（每次更新包里又会带来一份，再删）
+    直接运行 .py 时什么都不做。"""
+    me = Path(argv0 or sys.argv[0]).name.lower()
+    old, new = APP_DIR / LEGACY_EXE, APP_DIR / EXE_NAME
+    if me == LEGACY_EXE.lower():
+        if not new.exists():
+            return False
+        fix_shortcuts(old, new)
+        subprocess.Popen([str(new), *sys.argv[1:]], cwd=str(APP_DIR), close_fds=True)
+        return True
+    if me == EXE_NAME.lower() and old.exists():
+        threading.Thread(target=_remove_later, args=(old,), daemon=True).start()
+    return False

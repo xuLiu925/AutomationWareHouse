@@ -1,4 +1,4 @@
-# XL FreightPilot 服务端（Cloudflare Worker）
+# FreightPilot 服务端（Cloudflare Worker）
 
 `worker.js` 负责三件事：
 
@@ -45,6 +45,7 @@
 | 看今天用了多少次 | KV 里 `usage:<日期>:all`（总数）和 `usage:<日期>:win:<Windows 用户名>`（每人）这些键（2 天后自动删除） |
 | 换 Gemini Key | Settings → Variables and Secrets 里改 `GEMINI_API_KEY` |
 | 改提示词 | Edit code 改 `PROMPT`，再点 Deploy；同时把 `worker.js` 存回仓库 |
+| 欢迎画面的每日一句 | 自动：每天（德国日期）第一个打开软件的人触发 1 次 Gemini，存在 `greeting:<日期>`，当天所有人看到同一句；想换一句就删掉当天这个键。提示词在 `GREETING_PROMPT` |
 
 ## 四、产品托盘参数和审核
 
@@ -94,7 +95,7 @@ KV 里的键（程序自动维护，不用手改）：
 
 **每次发布新版本**
 1. 打包：`python build.py 这次更新了什么`（后面的文字可选，会显示在同事的更新提示里）。
-2. 打包完 `dist\release\` 里有两个文件：`XL-FreightPilot-<版本>.zip` 和 `latest.json`。
+2. 打包完 `dist\release\` 里有两个文件：`FreightPilot-<版本>.zip` 和 `latest.json`。
 3. R2 → `xlfp-releases` → Upload：**先传 zip，再传 `latest.json`**（覆盖旧的；顺序反了，同事可能下载到校验不一致的包，重试即可）。
 4. 同事下次打开程序就会提示更新。旧的 zip 可以留着，也可以删掉（只会下载 `latest.json` 指向的那个）。
 

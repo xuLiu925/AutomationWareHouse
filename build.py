@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""打包成发给同事的"XL FreightPilot"文件夹和 zip（用 Nuitka 编译，同事那边不需要 Python）。
+"""打包成发给同事的"FreightPilot"文件夹和 zip（用 Nuitka 编译，同事那边不需要 Python）。
 
 用法（只在你自己的电脑上）:
     pip install nuitka
     python build.py
 
 结果:
-    dist/XL FreightPilot/       整个文件夹就是发给同事的程序
-    dist/XL FreightPilot.zip    同一份内容的压缩包
+    dist/FreightPilot/          整个文件夹就是发给同事的程序
+    dist/FreightPilot.zip       同一份内容的压缩包
 注意: 不会把你的登录信息（dachser_profile）打包进去。
 
 关于路径:
@@ -28,17 +28,23 @@ from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-NAME = "XL FreightPilot"
+NAME = "FreightPilot"
+# 改名过渡（2026-11）：旧版的在线更新只认 "XL FreightPilot.exe"，更新包里再放一份同样的程序叫这个名字，
+# 旧版才能装上新版；新版用旧名字启动时会改快捷方式、换成 FreightPilot.exe（updater.migrate_name）。
+# 同事都更新过以后改成 None，更新包就小了。
+LEGACY_EXE = "XL FreightPilot.exe"
 IN_PLACE = str(ROOT).isascii() and not os.environ.get("LIUXU_BUILD_DIR")
 STAGE = ROOT / "build" if IN_PLACE else Path(
     os.environ.get("LIUXU_BUILD_DIR") or (r"D:\liuxu_build" if Path("D:/").exists() else r"C:\liuxu_build"))
 DIST = ROOT / "dist" / NAME
 EXE_TMP = "LiuXuScript.exe"     # 编译时用英文名，打包完再改名
 SOURCES = ["gui.py", "app_ui.py", "license_check.py", "dachser_fill.py", "ai_clean.py", "create_orders.py", "match_orders.py",
-           "pallet_plan.py", "params_editor.py", "params_sync.py", "feishu_mail.py", "reconcile.py", "dachser_cost.py", "updater.py"]
+           "pallet_plan.py", "params_editor.py", "params_sync.py", "feishu_mail.py", "reconcile.py", "dachser_cost.py", "updater.py", "welcome.py"]
 VERSION = datetime.now().strftime("%Y.%m.%d.%H%M")     # 在线更新按这个比较新旧（version.txt）
 RELEASE = ROOT / "dist" / "release"                     # 上传到 R2 的两个文件
-EXTRA_FILES = ["pallet_params.json", "xlfp-wms-sn.user.js"]     # pallet_params.json 不在 Git 里，打包前本机要有
+ICON = ROOT / "assets" / "xlfp.ico"             # exe 图标（tools/make_art.py 生成）
+EXTRA_FILES = ["pallet_params.json", "xlfp-wms-sn.user.js", "assets/xlfp.ico", "assets/scene_morning.png",
+               "assets/scene_day.png", "assets/scene_night.png"]     # pallet_params.json 不在 Git 里，打包前本机要有
 PACKAGES = ["nuitka", f"playwright=={version('playwright')}", f"openpyxl=={version('openpyxl')}"]
 
 
@@ -74,6 +80,7 @@ def compile_exe(py):
            "--standalone", "--assume-yes-for-downloads",
            "--enable-plugin=tk-inter",
            "--windows-console-mode=disable",
+           f"--windows-icon-from-ico={ICON}",
            "--include-package=playwright",      # Nuitka 的 playwright 插件会自动带上 driver（node.exe 等）
            f"--output-dir={out}", f"--output-filename={EXE_TMP}",
            str(src / "gui.py")]
@@ -91,7 +98,10 @@ def assemble(built):
                              f"请先关闭正在运行的 {NAME}.exe（以及打开的这个文件夹里的文件），再重新运行 python build.py")
     shutil.copytree(built, DIST)
     (DIST / EXE_TMP).rename(DIST / f"{NAME}.exe")
+    if LEGACY_EXE:
+        shutil.copy2(DIST / f"{NAME}.exe", DIST / LEGACY_EXE)
     for f in EXTRA_FILES:
+        (DIST / f).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / f, DIST / f)
     (DIST / "危险品文件").mkdir(exist_ok=True)
     (DIST / "version.txt").write_text(VERSION, encoding="utf-8")
@@ -121,7 +131,7 @@ def make_release(z, notes):
     if RELEASE.exists():
         shutil.rmtree(RELEASE)
     RELEASE.mkdir(parents=True)
-    name = f"XL-FreightPilot-{VERSION}.zip"
+    name = f"FreightPilot-{VERSION}.zip"
     shutil.copy2(z, RELEASE / name)
     data = (RELEASE / name).read_bytes()
     info = {"version": VERSION, "file": name, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data),

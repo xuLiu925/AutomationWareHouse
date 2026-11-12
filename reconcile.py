@@ -35,7 +35,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Alignment, Font, PatternFill
 
 import app_ui
 import license_check
@@ -773,6 +773,8 @@ def reconcile(orders, quotes, notices=(), inquiries=(), costs=None):
         if q["changed"]:
             flags.add("changed")
         cost, cost_note = (costs or {}).get(o["no"], (None, ""))
+        if costs is not None and cost is None:
+            flags.add("nocost")
         if cost_note:
             notes.append("成本：" + cost_note)
         shown = " ".join(q["codes"]) or " ".join(o["mrs"] or (n["codes"] if n else []) or o["codes"][:2])
@@ -798,6 +800,25 @@ def reconcile(orders, quotes, notices=(), inquiries=(), costs=None):
     return rows, skipped
 
 
+# 颜色说明表（和 write_xlsx 里的涂色一一对应，改颜色时两边一起改）
+LEGEND = [
+    ("FFF2CC", "对账表：整行", "价格是 AI 从邮件里读出来的（表格规则读不出），「依据」列有 AI 引用的原文",
+     "对照原文核对价格"),
+    ("F8CBAD", "对账表：「状态」格", "状态不是「已找到」：需人工确认、未找到报价邮件、最新报价待定、有询价没找到报价等",
+     "看「说明」列的原因，手动处理"),
+    ("F4B084", "对账表：「报价」和「状态」格", "仅客户确认价：没找到我们的报价邮件（或最新报价写待定），价格取自客户的出货通知",
+     "确认客户写的价格对不对"),
+    ("BDD7EE", "对账表：「报价」格", "这个编号前后报过不同的价格，表里用的是最新一封，「说明」列有报价历史",
+     "确认最新的价格是对的"),
+    ("D9C3E9", "对账表：「出库单号」格", "同一个报价对上了好几张出库单，可能重复收费，这几张都不填价格、标需人工确认",
+     "确认这个报价算给哪张出库单"),
+    ("D9D9D9", "对账表：「成本价」格", "Dachser 网站询价里没查到成本（几条价格不同、询价太早网站已不保留、邮件询价，或读网站失败），"
+     "原因在「说明」列「成本：」后面", "需要的话手动查成本"),
+    ("FFD966", "未对账表：整行", "有我们的卡派报价，但客户之后的出货通知写的是快递：改发快递了，不对账",
+     "确认确实改发快递"),
+]
+
+
 def write_xlsx(rows, skipped, out):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -815,6 +836,7 @@ def write_xlsx(rows, skipped, out):
     chg_fill = PatternFill("solid", fgColor="BDD7EE")      # 报价改过：报价格浅蓝
     shared_fill = PatternFill("solid", fgColor="D9C3E9")   # 同一个报价对上多张出库单：出库单号浅紫
     switch_fill = PatternFill("solid", fgColor="FFD966")   # 有卡派报价但改发快递："未对账"整行金黄
+    nocost_fill = PatternFill("solid", fgColor="D9D9D9")   # 查了成本但没查到：成本价格浅灰
     for (_, flags), row in zip(rows, ws.iter_rows(min_row=2)):
         if str(row[5].value or "").find(AI_MARK) >= 0:
             for c in row:
@@ -827,6 +849,8 @@ def write_xlsx(rows, skipped, out):
             row[3].fill = chg_fill
         if "shared" in flags:
             row[2].fill = shared_fill
+        if "nocost" in flags:
+            row[7].fill = nocost_fill
     for r in ws.iter_rows(min_row=2, min_col=4, max_col=8):
         r[0].number_format = r[3].number_format = r[4].number_format = "0.00"
     ws.freeze_panes = "A2"
@@ -842,6 +866,18 @@ def write_xlsx(rows, skipped, out):
     for cell in ws2[1]:
         cell.font = Font(bold=True)
     ws2.freeze_panes = "A2"
+    ws3 = wb.create_sheet("颜色说明")
+    ws3.append(["颜色", "涂在哪", "意思", "要做什么"])
+    for fill, sheet_where, meaning, todo in LEGEND:
+        ws3.append(["", sheet_where, meaning, todo])
+        ws3.cell(ws3.max_row, 1).fill = PatternFill("solid", fgColor=fill)
+    for c, w in zip("ABCD", (8, 26, 70, 36)):
+        ws3.column_dimensions[c].width = w
+    for cell in ws3[1]:
+        cell.font = Font(bold=True)
+    for row in ws3.iter_rows(min_row=2):
+        for c in row:
+            c.alignment = Alignment(wrap_text=True, vertical="top")
     while True:
         try:
             wb.save(out)
@@ -874,7 +910,9 @@ def run(args):
             costs = dachser_cost.costs(orders, drows, earliest)
             print(f"成本价：Dachser 网站询价 {len(drows)} 条，对上 {sum(v[0] is not None for v in costs.values())} 张出库单")
         except Exception as e:
-            print(f"⚠ 读 Dachser 网站询价失败，成本价不填：{str(e).splitlines()[0] if str(e) else e!r}")
+            why = str(e).splitlines()[0] if str(e) else repr(e)
+            print(f"⚠ 读 Dachser 网站询价失败，成本价不填：{why}")
+            costs = {o["no"]: (None, "读 Dachser 网站询价失败，原因见运行记录") for o in orders}
     t_cost = time.monotonic()
 
     if args.eml:
