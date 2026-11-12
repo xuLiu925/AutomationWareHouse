@@ -54,9 +54,9 @@ def scene_file(now=None):
     return p if p.exists() else None
 
 
-def date_line(now=None, ai=False):
+def date_line(now=None):
     now = now or datetime.now()
-    return f"{now.month}月{now.day}日 星期{WEEKDAYS[now.weekday()]}" + (" · 每日一句由 AI 生成" if ai else "")
+    return f"{now.month}月{now.day}日 星期{WEEKDAYS[now.weekday()]}"
 
 
 def fallback_line():
