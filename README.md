@@ -286,7 +286,7 @@ params_sync.py      产品参数同步、申请与审核接口
 create_orders.py    建单：报价搜索匹配、创建、填写运输订单、危险品弹窗、文件上传、防锁单
 match_orders.py     领星表读取、地址比对、国家映射
 reconcile.py        对账：出库单 → 报价邮件解析（表格规则 + AI 兜底）→ 对账 Excel
-welcome.py          运行记录欢迎画面：按时段插画、问候、每日一句（服务器 AI 每天一句，连不上用自带的）
+welcome.py          运行记录框顶部的固定横幅（不随日志滚动）：按时段插画、问候、每日一句（服务器 AI 每天一句，连不上用自带的），右下角日期
 tools/make_art.py   画图标和欢迎插画，输出到 assets/（需要 Pillow，只在开发时用）
 dachser_cost.py     对账的成本价：读门户 My enquiries 的网站询价价格并按出库单匹配
 feishu_mail.py      飞书邮件：OAuth 授权（本机回调）、token 缓存与续期、读邮件

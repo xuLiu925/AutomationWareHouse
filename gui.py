@@ -136,10 +136,16 @@ class App:
         ttk.Label(root, text=license_check.NOTICE, foreground="#666",
                   padding=(10, 0, 10, 6)).pack(
             side="bottom", anchor="w")
-        self.log = ScrolledText(root, height=20, font=("Microsoft YaHei UI", 9))
-        self.log.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        # 记录框 = 外框 + 顶部固定横幅 + 下面滚动的日志（横幅在框里，但不跟着滚）
+        box = tk.Frame(root, bg="white", highlightthickness=1, highlightbackground="#a0a0a0")
+        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        self._build_banner(box)
+        self.log = ScrolledText(box, height=20, font=("Microsoft YaHei UI", 9), borderwidth=0,
+                                highlightthickness=0, padx=4)
+        self.log.pack(fill="both", expand=True)
         self.daily = None          # 服务器上的每日一句（后台取，取到前先用自带的）
         self._show_welcome()
+        root.after(300_000, self._tick_banner)
         threading.Thread(target=lambda: self.q.put(("greeting", welcome.daily_line())), daemon=True).start()
 
         self._mode_changed()
@@ -177,40 +183,58 @@ class App:
         self.log.delete("1.0", "end")
         self._show_welcome()
 
+    def _build_banner(self, root):
+        """运行记录框顶部的固定横幅（小插画 + 问候 + 每日一句），不随日志滚动。"""
+        bg = "#f8fafc"
+        self.banner = tk.Frame(root, bg=bg)
+        self.banner.pack(fill="x")
+        tk.Frame(root, bg="#e2e8f0", height=1).pack(fill="x")      # 横幅和日志之间的细线
+        self.b_pic = tk.Label(self.banner, bg=bg)                  # 左：按时段的小插画
+        self.b_pic.pack(side="left", padx=(10, 14), pady=6)
+        txt = tk.Frame(self.banner, bg=bg)                         # 中：问候 + 每日一句
+        txt.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=8)
+        self.b_hello = tk.Label(txt, bg=bg, anchor="w", fg="#1e3a8a",
+                                font=("Microsoft YaHei UI", 12, "bold"))
+        self.b_hello.pack(fill="x")
+        self.b_daily = tk.Label(txt, bg=bg, anchor="w", justify="left", fg="#334155",
+                                font=("Microsoft YaHei UI", 9), wraplength=480)
+        self.b_daily.pack(fill="x", pady=(3, 0))
+        self.b_date = tk.Label(self.banner, bg=bg, fg="#94a3b8",   # 右下角：日期
+                               font=("Microsoft YaHei UI", 8))
+        self.b_date.place(relx=1.0, rely=1.0, x=-10, y=-5, anchor="se")
+        # 句子换行时给右下角的日期留出位置
+        txt.bind("<Configure>", lambda e: self.b_daily.configure(wraplength=max(200, e.width - 110)))
+
     def _show_welcome(self):
-        """运行记录第一条：按时段的插画 + 问候 + 每日一句。出错就算了，不影响使用。"""
+        """刷新横幅：按时段的插画 + 问候 + 每日一句。出错就算了，不影响使用。"""
         try:
-            log = self.log
-            log.tag_configure("w_center", justify="center")
-            log.tag_configure("w_hello", font=("Microsoft YaHei UI", 15, "bold"), foreground="#1e3a8a",
-                              spacing1=8, justify="center")
-            log.tag_configure("w_joke", font=("Microsoft YaHei UI", 11), foreground="#334155", spacing1=4,
-                              justify="center")
-            log.tag_configure("w_meta", font=("Microsoft YaHei UI", 9), foreground="#94a3b8", spacing1=8,
-                              spacing3=10, justify="center")
             f = welcome.scene_file()
-            if f:
-                self._scene = tk.PhotoImage(file=str(f))      # 要留着引用，不然图片会被回收
-                log.image_create("1.0", image=self._scene, pady=6)
-                log.insert("end", "\n")
-                log.tag_add("w_center", "1.0", "2.0")
-            log.insert("end", welcome.hello() + "\n", "w_hello")
-            log.insert("end", (self.daily or welcome.fallback_line()) + "\n", ("w_joke", "w_daily"))
-            log.insert("end", welcome.date_line(ai=bool(self.daily)) + "\n\n", ("w_meta", "w_date"))
+            if f and getattr(self, "_scene_path", None) != f:
+                self._scene = tk.PhotoImage(file=str(f)).subsample(4)   # 要留着引用，不然图片会被回收
+                self._scene_path = f
+                self.b_pic.configure(image=self._scene)
+            self.b_hello.configure(text=welcome.hello())
+            self.b_daily.configure(text=self.daily or getattr(self, "_fallback", None)
+                                   or self._new_fallback())
+            self.b_date.configure(text=welcome.date_line())
         except Exception:
             pass
 
+    def _new_fallback(self):
+        self._fallback = welcome.fallback_line()
+        return self._fallback
+
+    def _tick_banner(self):
+        """每 5 分钟刷新一次问候和插画（跨时段时会变）。"""
+        self._show_welcome()
+        self.root.after(300_000, self._tick_banner)
+
     def _set_daily(self, text):
-        """每日一句取到了：记下来，欢迎画面还在的话把句子换掉。"""
+        """每日一句取到了：记下来，换到横幅上。"""
         if not text:
             return
         self.daily = text
-        for tag, value, tags in (("w_daily", text + "\n", ("w_joke", "w_daily")),
-                                 ("w_date", welcome.date_line(ai=True) + "\n\n", ("w_meta", "w_date"))):
-            r = self.log.tag_ranges(tag)
-            if r:
-                self.log.delete(r[0], r[-1])
-                self.log.insert(r[0], value, tags)
+        self._show_welcome()
 
     def _pick_xlsx(self):
         f = filedialog.askopenfilename(title="选择 Excel", filetypes=[("Excel", "*.xlsx *.xlsm"), ("所有文件", "*.*")])
