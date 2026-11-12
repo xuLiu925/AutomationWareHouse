@@ -99,6 +99,11 @@ KV 里的键（程序自动维护，不用手改）：
 3. R2 → `xlfp-releases` → Upload：**先传 zip，再传 `latest.json`**（覆盖旧的；顺序反了，同事可能下载到校验不一致的包，重试即可）。
 4. 同事下次打开程序就会提示更新。旧的 zip 可以留着，也可以删掉（只会下载 `latest.json` 指向的那个）。
 
+**命令行自动上传（远程发版用）**
+- 一次性准备：`npm install -g wrangler`；Cloudflare → My Profile → API Tokens → 自定义 token，只给 Account 的 **Workers R2 Storage: Edit**；存成 Windows 用户环境变量 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`（只在本机，不进仓库）。
+- `python build.py 这次更新了什么 --upload`：打包、自检通过后自动先传 zip 再传 `latest.json`，读回 R2 上的 `latest.json` 核对版本，再问一次 Worker `/update/latest`。zip 传失败就不动 `latest.json`。
+- `python build.py --upload-only`：只把上次打好的 `dist\release\` 再传一次（上传失败后重试）。
+
 **说明**
 - 版本号是打包时间（如 `2026.11.07.1530`），写在程序目录的 `version.txt`，只比新旧，不用手动改。
 - 更新时程序下载 → 校验 sha256 → 关闭 → 覆盖程序文件 → 重新打开。管理员码、飞书授权、邮件缓存、Dachser 登录信息、危险品文件不在更新包里，不会动；本机已有的 `pallet_params.json` 不覆盖。

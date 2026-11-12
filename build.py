@@ -3,7 +3,9 @@
 
 用法（只在你自己的电脑上）:
     pip install nuitka
-    python build.py
+    python build.py [更新说明]                 只打包
+    python build.py [更新说明] --upload        打包后自动传到 R2（需要 wrangler 和 CLOUDFLARE_API_TOKEN）
+    python build.py --upload-only              只上传上次打好的 dist/release
 
 结果:
     dist/FreightPilot/          整个文件夹就是发给同事的程序
@@ -42,6 +44,7 @@ SOURCES = ["gui.py", "app_ui.py", "license_check.py", "dachser_fill.py", "ai_cle
            "pallet_plan.py", "params_editor.py", "params_sync.py", "feishu_mail.py", "reconcile.py", "dachser_cost.py", "updater.py", "welcome.py"]
 VERSION = datetime.now().strftime("%Y.%m.%d.%H%M")     # 在线更新按这个比较新旧（version.txt）
 RELEASE = ROOT / "dist" / "release"                     # 上传到 R2 的两个文件
+BUCKET = "xlfp-releases"                                # --upload 用 wrangler 传到这个 R2 存储桶
 ICON = ROOT / "assets" / "xlfp.ico"             # exe 图标（tools/make_art.py 生成）
 EXTRA_FILES = ["pallet_params.json", "xlfp-wms-sn.user.js", "assets/xlfp.ico", "assets/scene_morning.png",
                "assets/scene_day.png", "assets/scene_night.png"]     # pallet_params.json 不在 Git 里，打包前本机要有
@@ -140,8 +143,78 @@ def make_release(z, notes):
     return name
 
 
+def _cf_env():
+    """wrangler 用的环境变量；当前进程没有时从 Windows 用户环境变量（注册表）补上——刚设好、没重启的程序也能用。"""
+    env = dict(os.environ)
+    if sys.platform == "win32":
+        import winreg
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                for name in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
+                    if not env.get(name):
+                        try:
+                            env[name] = winreg.QueryValueEx(k, name)[0]
+                        except OSError:
+                            pass
+        except OSError:
+            pass
+    if not env.get("CLOUDFLARE_API_TOKEN"):
+        raise SystemExit("上传失败：没有环境变量 CLOUDFLARE_API_TOKEN（Cloudflare token，权限 Workers R2 Storage: Edit），"
+                         "见 worker/README.md")
+    return env
+
+
+def _wrangler(args, env, **kw):
+    exe = shutil.which("wrangler") or shutil.which("wrangler.cmd")
+    if not exe:
+        raise SystemExit("上传失败：找不到 wrangler，请先运行 npm install -g wrangler")
+    return subprocess.run([exe, *args], env=env, **kw)
+
+
+def upload():
+    """把 dist/release 的两个文件传到 R2：先 zip 再 latest.json（zip 失败就不动 latest.json，同事不会看到新版本），
+    然后读回 R2 上的 latest.json 核对版本，再问一次 Worker /update/latest。"""
+    info = json.loads((RELEASE / "latest.json").read_text(encoding="utf-8"))
+    zp = RELEASE / info["file"]
+    if not zp.exists() or zp.stat().st_size != info["size"]:
+        raise SystemExit(f"上传失败：{zp} 不存在或大小和 latest.json 不一致，请重新打包")
+    env = _cf_env()
+    for f, ctype in ((zp, "application/zip"), (RELEASE / "latest.json", "application/json")):
+        print(f"上传 {f.name} ({f.stat().st_size / 1e6:.1f} MB) ...")
+        r = _wrangler(["r2", "object", "put", f"{BUCKET}/{f.name}", "--file", str(f),
+                       "--content-type", ctype, "--remote"], env)
+        if r.returncode:
+            raise SystemExit(f"上传 {f.name} 失败（wrangler 返回 {r.returncode}）"
+                             + ("；latest.json 没动，同事那边还是旧版本" if f == zp else ""))
+    r = _wrangler(["r2", "object", "get", f"{BUCKET}/latest.json", "--remote", "--pipe"], env,
+                  capture_output=True, text=True, encoding="utf-8")
+    try:
+        remote = json.loads(r.stdout[r.stdout.index("{"):])
+    except ValueError:
+        remote = {}
+    if remote.get("version") != info["version"] or remote.get("sha256") != info["sha256"]:
+        raise SystemExit(f"上传后核对失败：R2 上的 latest.json 是 {remote.get('version')}，应为 {info['version']}")
+    print(f"✓ 已上传到 R2：版本 {info['version']}")
+    try:
+        import license_check
+        status, data = license_check.post("/update/latest", {}, 15)
+        ver = data.get("version") if isinstance(data, dict) else None
+        if status == 200 and ver == info["version"]:
+            print(f"✓ 服务器 /update/latest 返回 {ver}，同事打开程序就会提示更新")
+        else:
+            print(f"⚠ 服务器 /update/latest 返回 HTTP {status}、版本 {ver}（服务开关关着时同事收不到更新）")
+    except Exception as e:
+        print(f"⚠ 没能问服务器确认（{e}），R2 上已是新版本")
+
+
 def main():
-    notes = " ".join(sys.argv[1:]).strip()          # 可选：python build.py 这次更新了什么（更新提示里显示）
+    sys.stdout.reconfigure(line_buffering=True)    # 和 wrangler/nuitka 的输出按顺序显示（远程看日志时）
+    args = sys.argv[1:]
+    do_upload = "--upload" in args
+    if "--upload-only" in args:                    # 只上传上次打好的 dist/release（上传失败后重试用）
+        upload()
+        return 0
+    notes = " ".join(a for a in args if a != "--upload").strip()   # 可选：这次更新了什么（更新提示里显示）
     built = compile_exe(build_python())
     assemble(built)
     ok = selftest()
@@ -151,8 +224,12 @@ def main():
         print("⚠ 自检没通过，请看上面的自检结果；没有生成在线更新文件")
         return 1
     name = make_release(z, notes)
-    print(f"在线更新文件: {RELEASE}\n"
-          f"  上传到 R2 存储桶：先传 {name}，再传 latest.json（覆盖旧的）。同事打开程序就会提示更新。")
+    print(f"在线更新文件: {RELEASE}")
+    if do_upload:
+        upload()
+    else:
+        print(f"  上传到 R2 存储桶：先传 {name}，再传 latest.json（覆盖旧的），"
+              f"或运行 python build.py --upload-only。同事打开程序就会提示更新。")
 
 
 if __name__ == "__main__":

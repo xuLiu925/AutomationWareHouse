@@ -235,7 +235,7 @@ python build.py
 - 新增 `.py` 模块需加入 `build.py` 的 `SOURCES`
 - exe 图标是 `assets/xlfp.ico`，欢迎插画是 `assets/scene_*.png`；改图运行 `python tools/make_art.py`（需要 `pip install pillow`）
 - 产品参数在服务器上维护，修改无需重新打包
-- **在线更新**：`python build.py 更新说明` 会在 `dist\release\` 生成 `FreightPilot-<版本>.zip` 和 `latest.json`，上传到 Cloudflare R2（先 zip 后 json，见 `worker/README.md`）；同事打开程序时提示更新，下载校验后自动替换并重启，本机数据不受影响。程序从 `XL FreightPilot.exe` 改名为 `FreightPilot.exe` 的过渡期，更新包里还带一份旧名字的 exe（旧版只认它），用旧名字打开时会自动把快捷方式改指新 exe（`build.py` 的 `LEGACY_EXE`，同事都更新后改成 `None`）
+- **在线更新**：`python build.py 更新说明` 会在 `dist\release\` 生成 `FreightPilot-<版本>.zip` 和 `latest.json`，上传到 Cloudflare R2（先 zip 后 json，见 `worker/README.md`；加 `--upload` 用 wrangler 自动上传并核对，`--upload-only` 只重传上次的包）；同事打开程序时提示更新，下载校验后自动替换并重启，本机数据不受影响。程序从 `XL FreightPilot.exe` 改名为 `FreightPilot.exe` 的过渡期，更新包里还带一份旧名字的 exe（旧版只认它），用旧名字打开时会自动把快捷方式改指新 exe（`build.py` 的 `LEGACY_EXE`，同事都更新后改成 `None`）
 
 ---
 
