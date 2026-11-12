@@ -1,4 +1,4 @@
-# XL FreightPilot
+# FreightPilot
 
 **Freight Quotation & Order Automation for Dachser eLogistics** · Developed by Xu Liu（刘旭）
 
@@ -30,7 +30,7 @@
 | 建单 | 从领星 ERP 导出出库单 → 按备注里的 MR 号在门户历史报价中找到对应报价 → 创建运输订单 → 抄写地址、联系人、电话 → 每个货物行添加危险品声明 → 上传危险品文件 | 一单十几个字段、多个弹窗；报价匹配靠肉眼；页面未保存就离开会导致订单被门户锁定 |
 | 出库复核 | 在领星 WMS 扫描产品二维码录入序列号 | 二维码里是逗号分隔的一串序列号，批量复核框要求一行一个，需要手动改 |
 
-XL FreightPilot 把上述流程中**可规则化的部分全部自动化**，把**需要判断的部分集中成清晰的提问**，在开始前一次性问完。
+FreightPilot 把上述流程中**可规则化的部分全部自动化**，把**需要判断的部分集中成清晰的提问**，在开始前一次性问完。
 
 ---
 
@@ -77,7 +77,7 @@ XL FreightPilot 把上述流程中**可规则化的部分全部自动化**，把
 - **本地缓存**：已读邮件的解析结果和压缩后的原文存在本机，重复对账不再下载；解析规则更新时用本机原文重新解析，也不用重新下载
 - **成本价**：每次对账都打开 Dachser 门户（同一个浏览器登录），只读“My enquiries”网站询价的 Price 作为成本（门户只保留最近一段时间的询价，开始日期自动取日期控件允许的最早日期；出库太早、询价已查不到的单在说明里注明）：门户单号里有出库单号（建单时追加的 `+出库单号`）的直接对上，否则按备注编号匹配（和建单同一套规则），优先已创建的那条；几条价格不同或没找到就不填，在说明里写原因。邮件询价的成本（价格在附件里）不读。门户读取失败时成本列留空，对账照常
 - **计时**：运行记录里打印查成本、读邮件、AI、生成 Excel 各用了多久；GUI 每个功能跑完都显示总用时
-- 输出：「对账」表（出库时间、编号、出库单号、报价、状态、依据、客户确认价、成本价、报价邮件、出货通知时间、说明）+「未对账」表（快递 / 渠道不明的出库单及原因）
+- 输出：「对账」表（出库时间、编号、出库单号、报价、状态、依据、客户确认价、成本价、报价邮件、出货通知时间、说明）+「未对账」表（快递 / 渠道不明的出库单及原因）+「颜色说明」表（每种标色的位置、含义和要做什么；查不到成本的成本价格标浅灰）
   - **依据**：价格格原文（如 `320欧`）；AI 读出的写 `AI 读取：<引用的邮件原文>`，整行浅黄色，要重点核对
   - 没填价格的状态（待定 / 需人工确认 / 未找到）标浅红色
   - 结果是“初稿 + 疑点清单”：填了金额的都能在我们发出的邮件里找到依据，但邮件以外（附件、电话、微信）的报价看不到，向客户收款前请人工核对
@@ -193,9 +193,9 @@ sequenceDiagram
 ## 快速开始
 
 ### 使用打包版
-1. 解压 `XL FreightPilot.zip`，**整个文件夹一起使用**
+1. 解压 `FreightPilot.zip`，**整个文件夹一起使用**
 2. 电脑需安装 **Google Chrome**
-3. 双击 `XL FreightPilot.exe`，首次在弹出的 Chrome 中登录 Dachser（建议让 Chrome 记住密码，之后会自动登录）
+3. 双击 `FreightPilot.exe`，首次在弹出的 Chrome 中登录 Dachser（建议让 Chrome 记住密码，之后会自动登录）
 4. 选择功能 → 选择 Excel → 开始
 5. 有新版本时，打开程序会提示更新（也可以点"检查更新"），确认后自动下载、替换并重新打开
 
@@ -229,12 +229,13 @@ python pallet_plan.py 11US2000ZZD-20001 44        # 单独计算装托方案
 python build.py
 ```
 
-- 生成 `dist\XL FreightPilot\` 和 `dist\XL FreightPilot.zip`；打包前请关闭正在运行的 exe
+- 生成 `dist\FreightPilot\` 和 `dist\FreightPilot.zip`；打包前请关闭正在运行的 exe
 - Nuitka 不支持非 ASCII 路径：项目在纯英文路径时直接在 `build/` 中编译；否则复制源码到 `D:\liuxu_build`（环境变量 `LIUXU_BUILD_DIR` 可改）并在专用虚拟环境中编译
 - 打包后自动运行 `--selftest` 检查 Chrome、装托参数和服务器连接，看到 `自检结果: OK ...` 即成功
 - 新增 `.py` 模块需加入 `build.py` 的 `SOURCES`
+- exe 图标是 `assets/xlfp.ico`，欢迎插画是 `assets/scene_*.png`；改图运行 `python tools/make_art.py`（需要 `pip install pillow`）
 - 产品参数在服务器上维护，修改无需重新打包
-- **在线更新**：`python build.py 更新说明` 会在 `dist\release\` 生成 `XL-FreightPilot-<版本>.zip` 和 `latest.json`，上传到 Cloudflare R2（先 zip 后 json，见 `worker/README.md`）；同事打开程序时提示更新，下载校验后自动替换并重启，本机数据不受影响
+- **在线更新**：`python build.py 更新说明` 会在 `dist\release\` 生成 `FreightPilot-<版本>.zip` 和 `latest.json`，上传到 Cloudflare R2（先 zip 后 json，见 `worker/README.md`）；同事打开程序时提示更新，下载校验后自动替换并重启，本机数据不受影响。程序从 `XL FreightPilot.exe` 改名为 `FreightPilot.exe` 的过渡期，更新包里还带一份旧名字的 exe（旧版只认它），用旧名字打开时会自动把快捷方式改指新 exe（`build.py` 的 `LEGACY_EXE`，同事都更新后改成 `None`）
 
 ---
 
@@ -285,6 +286,8 @@ params_sync.py      产品参数同步、申请与审核接口
 create_orders.py    建单：报价搜索匹配、创建、填写运输订单、危险品弹窗、文件上传、防锁单
 match_orders.py     领星表读取、地址比对、国家映射
 reconcile.py        对账：出库单 → 报价邮件解析（表格规则 + AI 兜底）→ 对账 Excel
+welcome.py          运行记录欢迎画面：按时段插画、问候、每日一句（服务器 AI 每天一句，连不上用自带的）
+tools/make_art.py   画图标和欢迎插画，输出到 assets/（需要 Pillow，只在开发时用）
 dachser_cost.py     对账的成本价：读门户 My enquiries 的网站询价价格并按出库单匹配
 feishu_mail.py      飞书邮件：OAuth 授权（本机回调）、token 缓存与续期、读邮件
 updater.py          在线更新：查版本、下载校验、退出后替换文件并重启
@@ -300,7 +303,7 @@ xlfp-wms-sn.user.js 领星 WMS 序列号助手（Tampermonkey）
 
 - **"The order is being processed by someone else"**：建单编辑页未 Save/Cancel 就离开会被门户锁单。程序离开前会确认；已被锁的单需等门户会话过期
 - **杀毒软件 / "已保护你的电脑"**：未签名的 exe 可能被拦截，点"更多信息 → 仍要运行"或加白名单
-- **弹窗找不到**：看任务栏中的 "XL FreightPilot - 请确认"，或点一下主窗口，弹窗会回到最前
+- **弹窗找不到**：看任务栏中的 "FreightPilot - 请确认"，或点一下主窗口，弹窗会回到最前
 
 ---
 
