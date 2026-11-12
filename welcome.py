@@ -47,11 +47,23 @@ def hello(now=None):
     return f"{word}，{name}！ {face}" if name else f"{word}！ {face}"
 
 
-def scene_file(now=None):
+def scene_kind(now=None):
     h = (now or datetime.now()).hour
-    kind = "morning" if 5 <= h < 11 else "day" if 11 <= h < 18 else "night"
-    p = app_path(f"assets/scene_{kind}.png")
+    return "morning" if 5 <= h < 11 else "day" if 11 <= h < 18 else "night"
+
+
+def scene_file(now=None):
+    p = app_path(f"assets/scene_{scene_kind(now)}.png")
     return p if p.exists() else None
+
+
+# 横幅上的字色：(问候, 每日一句, 底色兜底)；日期在深色路面上，统一浅色
+BANNER_COLORS = {
+    "morning": ("#7c2d12", "#431407", "#fde7c0"),
+    "day": ("#1e3a8a", "#1e293b", "#c7e2fb"),
+    "night": ("#fef3c7", "#e0e7ff", "#2e1d6b"),
+}
+DATE_COLOR = "#e2e8f0"
 
 
 def date_line(now=None):
