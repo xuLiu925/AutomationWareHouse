@@ -193,7 +193,7 @@ sequenceDiagram
 ## 快速开始
 
 ### 使用打包版
-1. 解压 `FreightPilot.zip`，**整个文件夹一起使用**
+1. 运行安装包 `FreightPilot-Setup-<版本>.exe`（不需要管理员权限，装到 `%LOCALAPPDATA%\Programs\FreightPilot`，自动建桌面和开始菜单快捷方式）；也可以解压 `FreightPilot.zip`，**整个文件夹一起使用**
 2. 电脑需安装 **Google Chrome**
 3. 双击 `FreightPilot.exe`，首次在弹出的 Chrome 中登录 Dachser（建议让 Chrome 记住密码，之后会自动登录）
 4. 选择功能 → 选择 Excel → 开始
@@ -230,6 +230,7 @@ python build.py
 ```
 
 - 生成 `dist\FreightPilot\` 和 `dist\FreightPilot.zip`；打包前请关闭正在运行的 exe
+- 自检通过后用 Inno Setup 6（`winget install JRSoftware.InnoSetup`；没装就跳过）按 `installer.iss` 生成安装包 `dist\FreightPilot-Setup-<版本>.exe`：装到当前用户目录（程序数据和在线更新都写在程序目录里，不能装 Program Files），桌面快捷方式默认勾选；重装不覆盖已有的 `pallet_params.json`；卸载删程序文件，保留 `dachser_profile`、飞书登录/缓存、`pallet_params.json`、危险品文件。安装包只用于首次安装，在线更新仍用 zip。界面语言：有 `installer\ChineseSimplified.isl` 就是中文，否则英文
 - Nuitka 不支持非 ASCII 路径：项目在纯英文路径时直接在 `build/` 中编译；否则复制源码到 `D:\liuxu_build`（环境变量 `LIUXU_BUILD_DIR` 可改）并在专用虚拟环境中编译
 - 打包后自动运行 `--selftest` 检查 Chrome、装托参数和服务器连接，看到 `自检结果: OK ...` 即成功
 - 新增 `.py` 模块需加入 `build.py` 的 `SOURCES`

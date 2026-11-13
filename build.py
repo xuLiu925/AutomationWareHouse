@@ -10,6 +10,7 @@
 结果:
     dist/FreightPilot/          整个文件夹就是发给同事的程序
     dist/FreightPilot.zip       同一份内容的压缩包
+    dist/FreightPilot-Setup-<版本>.exe  安装包（installer.iss，需要装 Inno Setup；没装就跳过）
 注意: 不会把你的登录信息（dachser_profile）打包进去。
 
 关于路径:
@@ -129,6 +130,35 @@ def make_zip():
     return z
 
 
+def find_iscc():
+    """Inno Setup 的编译器 ISCC.exe；没装返回 None（winget install JRSoftware.InnoSetup）。"""
+    for p in (shutil.which("ISCC"),
+              os.path.expandvars(r"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"),
+              r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe", r"C:\Program Files\Inno Setup 6\ISCC.exe"):
+        if p and Path(p).exists():
+            return Path(p)
+    return None
+
+
+def make_installer():
+    """dist/FreightPilot-Setup-<版本>.exe：发给新同事的安装包（装到用户目录，桌面快捷方式）。
+    在线更新还是用 zip，和安装包无关。"""
+    iscc = find_iscc()
+    if not iscc:
+        print("⚠ 没装 Inno Setup，跳过安装包（winget install JRSoftware.InnoSetup）")
+        return None
+    r = subprocess.run([str(iscc), "/Q", f"/DAppVersion={VERSION}", f"/DSourceDir={DIST}",
+                        f"/DOutputDir={DIST.parent}", str(ROOT / "installer.iss")], cwd=ROOT)
+    out = DIST.parent / f"{NAME}-Setup-{VERSION}.exe"
+    if r.returncode or not out.exists():
+        print(f"⚠ 安装包生成失败（ISCC 返回 {r.returncode}）")
+        return None
+    for old in DIST.parent.glob(f"{NAME}-Setup-*.exe"):      # 只留这一版
+        if old != out:
+            old.unlink(missing_ok=True)
+    return out
+
+
 def make_release(z, notes):
     """在线更新用的两个文件：压缩包（文件名带版本号）和 latest.json。上传到 R2 见 worker/README.md。"""
     if RELEASE.exists():
@@ -223,6 +253,9 @@ def main():
     if not ok:
         print("⚠ 自检没通过，请看上面的自检结果；没有生成在线更新文件")
         return 1
+    setup = make_installer()
+    if setup:
+        print(f"安装包: {setup}（发给同事安装用）")
     name = make_release(z, notes)
     print(f"在线更新文件: {RELEASE}")
     if do_upload:
